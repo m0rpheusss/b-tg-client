@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Button, Spinner, Alert } from "@heroui/react";
 
-const API_BASE = "https://yer-undeleterious-jeanelle.ngrok-free.dev/api";
+const API_BASE = "https://bohemia-api-1.yxwfjh.easypanel.host/";
 
 interface Order {
     id: number;
@@ -27,7 +27,7 @@ export default function OrdersSheet({ onClose }: { onClose: () => void }) {
         fetch(`${API_BASE}/orders`, {
             headers: {
                 Authorization: `Bearer ${token}`,
-                "ngrok-skip-browser-warning": "any-value",
+                // "ngrok-skip-browser-warning": "any-value",
             },
         })
             .then((r) => {
@@ -71,7 +71,7 @@ export default function OrdersSheet({ onClose }: { onClose: () => void }) {
                 const res = await fetch(`${API_BASE}/orders/${order.id}/stash`, {
                     headers: {
                         Authorization: `Bearer ${token}`,
-                        "ngrok-skip-browser-warning": "any-value",
+                        // "ngrok-skip-browser-warning": "any-value",
                     },
                 });
 

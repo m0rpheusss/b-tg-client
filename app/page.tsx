@@ -85,12 +85,12 @@ export default function Home() {
 
     // 1. Memoize the fetch function so it can be safely used inside multiple hooks
     const fetchUserData = useCallback((token: string) => {
-        return fetch(`https://yer-undeleterious-jeanelle.ngrok-free.dev/api/user`, {
+        return fetch(`https://bohemia-api-1.yxwfjh.easypanel.host/user`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
-                "ngrok-skip-browser-warning": "any-value",
+                // "ngrok-skip-browser-warning": "any-value",
             },
         })
             .then((res) => {
@@ -165,7 +165,7 @@ export default function Home() {
             const tg = window.Telegram.WebApp;
             const token = tg.initData || "/*no-auth*/";
 
-            const res = await fetch("https://yer-undeleterious-jeanelle.ngrok-free.dev/api/balance/create", {
+            const res = await fetch("https://bohemia-api-1.yxwfjh.easypanel.host/balance/create", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -13,7 +13,7 @@ import {
     Button
 } from "@heroui/react";
 
-const API_BASE = "https://yer-undeleterious-jeanelle.ngrok-free.dev/api";
+const API_BASE = "https://bohemia-api-1.yxwfjh.easypanel.host";
 
 interface Category {
     id: string;
