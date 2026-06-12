@@ -13,7 +13,7 @@ import {
     Button
 } from "@heroui/react";
 
-const API_BASE = "https://bohemia-api-1.yxwfjh.easypanel.host";
+const API_BASE = "https://yer-undeleterious-jeanelle.ngrok-free.dev/api";
 
 interface Category {
     id: string;
@@ -460,7 +460,7 @@ const RenderShop = () => {
                     {stashUrl ? (
                         <div className="flex flex-col gap-3">
                             <p className="text-xs text-emerald-400 font-semibold text-center">
-                                ✅ Purchase successful! Check your notifications.
+                                ✅ Purchase successful! Stash location is being sent.
                             </p>
                             <Button
                                 variant="flat"

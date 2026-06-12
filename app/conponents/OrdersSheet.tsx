@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Button, Spinner, Alert } from "@heroui/react";
 
-const API_BASE = "https://bohemia-api-1.yxwfjh.easypanel.host/";
+const API_BASE = "https://yer-undeleterious-jeanelle.ngrok-free.dev/api";
 
 interface Order {
     id: number;
