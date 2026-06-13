@@ -6,9 +6,14 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Copy the rest of your code and build
+# Copy the rest of your code
 COPY . .
+
+# 👇 1. DECLARE AND MAP THE BUILD ARG INTO THE BUILDER STAGE
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_TELEMETRY_DISABLED=1
+
 RUN npm run build
 
 # --- Production Stage ---
@@ -23,6 +28,8 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/public ./public
+# 👇 2. SEE IMPORTANT NOTE BELOW ABOUT THIS CONFIG
+COPY --from=builder /app/next.config.js ./next.config.js
 
 EXPOSE 3000
 
