@@ -39,7 +39,6 @@ export default function OrdersSheet({ onClose, lang = "en" }: { onClose: () => v
                     setOrders(data);
                 } else if (data && Array.isArray(data.orders)) {
                     setOrders(data.orders);
-                    window.sessionStorage.setItem("total_orders", data.orders.length)
                 } else {
                     setOrders([]);
                 }
