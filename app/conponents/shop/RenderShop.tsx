@@ -1,20 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-    Avatar,
-    Card,
-    Description,
-    Label,
-    ListBox,
-    Separator,
-    Spinner,
-    Surface,
-    Button
-} from "@heroui/react";
+import { Spinner } from "@heroui/react";
 import { translations, type Lang } from "@/app/translations";
 
-const API_BASE = "https://bohemia-api-1.yxwfjh.easypanel.host/";
+const API_BASE = "https://bohemia-api-1.yxwfjh.easypanel.host";
 
 interface Category {
     id: string;
@@ -35,6 +25,8 @@ interface Product {
     measure_type: string;
 }
 
+type ShopView = "location" | "grid" | "detail";
+
 const RenderShop = ({ lang = "en" }: { lang?: Lang }) => {
     const t = (key: string) => translations[lang][key] ?? key;
 
@@ -49,6 +41,11 @@ const RenderShop = ({ lang = "en" }: { lang?: Lang }) => {
     const [stashUrl, setStashUrl] = useState<string | null>(null);
     const [buyError, setBuyError] = useState<string | null>(null);
 
+    const currentView: ShopView =
+        selectedProduct !== 0 ? "detail" :
+            selectedCity !== "" ? "grid" :
+                "location";
+
     function triggerHaptic(type = 'impact', style = 'medium') {
         const WebApp = window.Telegram?.WebApp;
         if (!WebApp || !WebApp.HapticFeedback) return;
@@ -58,10 +55,33 @@ const RenderShop = ({ lang = "en" }: { lang?: Lang }) => {
                 case 'notification': WebApp.HapticFeedback.notificationOccurred(style); break;
                 case 'selection': WebApp.HapticFeedback.selectionChanged(); break;
             }
-        } catch (error) {
-            console.error("Failed to trigger haptic feedback:", error);
-        }
+        } catch {}
     }
+
+    useEffect(() => {
+        const bb = window.Telegram?.WebApp?.BackButton;
+        if (!bb) return;
+
+        if (currentView === "location") {
+            bb.hide();
+            return;
+        }
+        bb.show();
+
+        const handler = () => {
+            triggerHaptic("impact", "light");
+            if (currentView === "detail") {
+                setSelectedProduct(0);
+                setStashUrl(null);
+                setBuyError(null);
+            } else if (currentView === "grid") {
+                setSelectedCity("");
+            }
+        };
+
+        bb.onClick(handler);
+        return () => { bb.offClick(handler); };
+    }, [currentView]);
 
     const handleBuy = async () => {
         if (!currentProductData) return;
@@ -133,17 +153,14 @@ const RenderShop = ({ lang = "en" }: { lang?: Lang }) => {
         };
 
         fetchShopData();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Re-label the "All" category when lang changes
     useEffect(() => {
         setCategories((prev) => {
             if (prev.length === 0) return prev;
             const [, ...rest] = prev;
             return [{ id: "all", name: t("tab_shop") }, ...rest];
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lang]);
 
     const handleProductSelect = async (productId: number) => {
@@ -154,9 +171,7 @@ const RenderShop = ({ lang = "en" }: { lang?: Lang }) => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" }
             });
-        } catch (error) {
-            console.error(error);
-        }
+        } catch {}
     };
 
     const productsToRender =
@@ -166,153 +181,112 @@ const RenderShop = ({ lang = "en" }: { lang?: Lang }) => {
 
     const currentProductData = products.find((p) => p.id === selectedProduct);
 
+    // ─── Изменено: Карточки стали полупрозрачными (добавлено "aa"), чтобы пропускать свет ───
+    const Card = ({ children, style = {} , onClick}: { children: React.ReactNode; style?: React.CSSProperties; onClick?: () => void }) => (
+        <div onClick={onClick} style={{ background: "#111118aa", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid #1E1E2A", borderRadius: 20, overflow: "hidden", cursor: onClick ? "pointer" : "default", ...style }}>
+            {children}
+        </div>
+    );
+
+    const RowButton = ({ label, sub, disabled, onClick }: { label: string; sub: string; disabled?: boolean; onClick?: () => void }) => (
+        <button onClick={onClick} disabled={disabled} style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "transparent", border: "none", textAlign: "left", color: "inherit", opacity: disabled ? 0.4 : 1, cursor: disabled ? "not-allowed" : "pointer" }}
+                onMouseEnter={e => !disabled && (e.currentTarget.style.background = "#1E1E2A44")}
+                onMouseLeave={e => !disabled && (e.currentTarget.style.background = "transparent")}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#1E1E2A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, fontWeight: 700 }}>📍</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "#fff", margin: 0 }}>{label}</p>
+                <p style={{ fontSize: 11, color: "#8A8A9A", margin: "2px 0 0" }}>{sub}</p>
+            </div>
+            {!disabled && <span style={{ color: "#44444F", fontSize: 12 }}>➔</span>}
+        </button>
+    );
+
+    // Повысили прозрачность до 0.25 и убрали жесткий закрашенный фон у контейнеров
+    const BackgroundGradient = () => (
+        <>
+            <div style={{ position: "fixed", inset: 0, zIndex: -1, overflow: "hidden", pointerEvents: "none", opacity: 0.25 }}>
+                <div style={{ position: "absolute", top: "-10%", right: "-10%", width: "75vw", height: "75vw", borderRadius: "50%", background: "radial-gradient(circle, #5C6BFF 0%, transparent 70%)", filter: "blur(80px)", animation: "revolutPulse 10s infinite alternate" }} />
+                <div style={{ position: "absolute", bottom: "10%", left: "-20%", width: "70vw", height: "70vw", borderRadius: "50%", background: "radial-gradient(circle, #00D2A8 0%, transparent 70%)", filter: "blur(80px)", animation: "revolutPulse 14s infinite alternate-reverse" }} />
+            </div>
+            <style>{`
+                @keyframes revolutPulse {
+                    0% { transform: translate(0, 0) scale(1); }
+                    100% { transform: translate(6%, -4%) scale(1.1); }
+                }
+            `}</style>
+        </>
+    );
+
     if (loading) {
         return (
-            <div className="fixed inset-0 flex justify-center items-center bg-[#0b0f19]">
+            <div style={{ position: "fixed", inset: 0, display: "flex", justifyContent: "center", alignItems: "center", background: "#0A0A0F" }}>
                 <Spinner size="lg" />
             </div>
         );
     }
 
-    /* ---- LOCATION SELECT ---- */
+    /* ---- 1. LOCATION SELECT ---- */
     if (selectedCity === "") {
         return (
-            <div className="h-[25vh] w-full flex justify-center items-center">
-                <div className="w-[95%]">
-                    <br /><br /><br />
-                    <b className="text-xs block mx-1 mb-2">{t("shop_select_location")}</b>
-
-                    <Surface className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/30">
-                        <ListBox
-                            aria-label="Locations"
-                            className="w-full p-2"
-                            onAction={(key) => {
-                                if (key === "1") {
-                                    triggerHaptic('impact', 'medium');
-                                    setSelectedCity("ost");
-                                }
-                            }}
-                        >
-                            <ListBox.Item id="1">
-                                <Avatar size="sm">
-                                    <Avatar.Image src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/blue.jpg" />
-                                    <Avatar.Fallback>O</Avatar.Fallback>
-                                </Avatar>
-                                <div className="flex flex-col">
-                                    <Label>Ostrava-Poruba</Label>
-                                    <Description>Czech Republic</Description>
-                                </div>
-                                <ListBox.ItemIndicator />
-                            </ListBox.Item>
-
-                            <ListBox.Item id="2" isDisabled>
-                                <Avatar size="sm">
-                                    <Avatar.Image src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/blue.jpg" />
-                                    <Avatar.Fallback>O</Avatar.Fallback>
-                                </Avatar>
-                                <div className="flex flex-col">
-                                    <Label>
-                                        Ostrava-Karolina
-                                        <span style={{ fontSize: '0.75em', color: 'orangered', marginLeft: '0.5em' }}>
-                                            {t("shop_out_of_stock")}
-                                        </span>
-                                    </Label>
-                                    <Description>Czech Republic</Description>
-                                </div>
-                                <ListBox.ItemIndicator />
-                            </ListBox.Item>
-
-                            <ListBox.Item isDisabled id="3">
-                                <Avatar size="sm">
-                                    <Avatar.Image src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/blue.jpg" />
-                                    <Avatar.Fallback>O</Avatar.Fallback>
-                                </Avatar>
-                                <div className="flex flex-col">
-                                    <Label>
-                                        Ostrava-Zabřeh
-                                        <span style={{ fontSize: '0.75em', color: 'orangered', marginLeft: '0.5em' }}>
-                                            {t("shop_out_of_stock")}
-                                        </span>
-                                    </Label>
-                                    <Description>Czech Republic</Description>
-                                </div>
-                                <ListBox.ItemIndicator />
-                            </ListBox.Item>
-
-                            <ListBox.Item isDisabled id="4">
-                                <Avatar size="sm">
-                                    <Avatar.Image src="https://heroui-assets.nyc3.cdn.digitaloceanspaces.com/avatars/blue.jpg" />
-                                    <Avatar.Fallback>O</Avatar.Fallback>
-                                </Avatar>
-                                <div className="flex flex-col">
-                                    <Label>
-                                        Brno-Komarov
-                                        <span style={{ fontSize: '0.75em', color: 'orange', marginLeft: '0.5em' }}>
-                                            {t("shop_coming_soon")}
-                                        </span>
-                                    </Label>
-                                    <Description>Czech Republic</Description>
-                                </div>
-                                <ListBox.ItemIndicator />
-                            </ListBox.Item>
-                        </ListBox>
-                    </Surface>
-                </div>
+            <div style={{ padding: "16px 16px 120px", maxWidth: 480, margin: "0 auto", overflowY: "auto", background: "transparent" }}>
+                <BackgroundGradient />
+                <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: "#44444F", textTransform: "uppercase", margin: "24px 0 8px 4px" }}>
+                    {t("shop_select_location")}
+                </p>
+                <Card>
+                    <RowButton label="Ostrava-Poruba" sub="Czech Republic" onClick={() => { triggerHaptic('impact', 'medium'); setSelectedCity("ost"); }} />
+                    <div style={{ height: 1, background: "#1E1E2A", margin: "0 16px" }} />
+                    <RowButton label={`Ostrava-Karolina — ${t("shop_out_of_stock")}`} sub="Czech Republic" disabled />
+                    <div style={{ height: 1, background: "#1E1E2A", margin: "0 16px" }} />
+                    <RowButton label={`Ostrava-Zabřeh — ${t("shop_out_of_stock")}`} sub="Czech Republic" disabled />
+                    <div style={{ height: 1, background: "#1E1E2A", margin: "0 16px" }} />
+                    <RowButton label={`Brno-Komarov — ${t("shop_coming_soon")}`} sub="Czech Republic" disabled />
+                </Card>
             </div>
         );
     }
 
-    /* ---- PRODUCT GRID ---- */
+    /* ---- 2. PRODUCT GRID ---- */
     if (selectedProduct === 0) {
         return (
-            <div className="w-full overflow-y-auto h-[calc(100vh-120px)]">
-                {/* CATEGORY BAR */}
-                <div className="sticky top-0 z-10 bg-[#0b0f19]/80 backdrop-blur-md border-b border-zinc-800">
-                    <div className="flex gap-2 overflow-x-auto px-4 py-3 hide-scrollbar">
-                        {categories.map((cat) => {
-                            const isSelected = String(selectedCategory) === String(cat.id);
-                            return (
-                                <Button
-                                    key={cat.id}
-                                    size="sm"
-                                    radius="lg"
-                                    variant={isSelected ? "solid" : "flat"}
-                                    color={isSelected ? "primary" : "default"}
-                                    onClick={() => {
-                                        triggerHaptic('selection');
-                                        setSelectedCategory(cat.id);
-                                    }}
-                                    className={`text-xs font-semibold whitespace-nowrap ${isSelected ? "shadow-md scale-[1.02]" : "opacity-60 bg-zinc-900/40"}`}
-                                >
-                                    {cat.name}
-                                </Button>
-                            );
-                        })}
-                    </div>
+            <div style={{ display: "flex", flexDirection: "column", height: "90vh", background: "transparent" }}>
+                <br />
+                <BackgroundGradient />
+                {/* Изменено: Убрали жесткий #0A0A0F у шапки категорий */}
+                <div style={{ position: "sticky", top: 0, zIndex: 10, background: "#0A0A0F88", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid #1E1E2A", padding: "10px 16px", display: "flex", gap: 8, overflowX: "auto" }} className="hide-scrollbar">
+                    {categories.map((cat) => {
+                        const isSelected = String(selectedCategory) === String(cat.id);
+                        return (
+                            <button key={cat.id} onClick={() => { triggerHaptic('selection'); setSelectedCategory(cat.id); }}
+                                    style={{
+                                        fontSize: 11, fontWeight: 700, padding: "6px 14px", borderRadius: 10, border: "none", cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
+                                        background: isSelected ? "#5C6BFF" : "#11111888",
+                                        color: isSelected ? "#fff" : "#8A8A9A",
+                                        border: isSelected ? "1px solid transparent" : "1px solid #1E1E2A"
+                                    }}>
+                                {cat.name}
+                            </button>
+                        );
+                    })}
                 </div>
 
                 {productsToRender.length === 0 ? (
-                    <div className="flex justify-center items-center h-48 text-zinc-400 text-sm">
+                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: 200, color: "#8A8A9A", fontSize: 13 }}>
                         {t("shop_empty_category")}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-2 gap-3 w-[95%] mx-auto pb-28 mt-3">
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "16px 16px 120px", maxWidth: 480, margin: "0 auto", overflowY: "auto", width: "100%", boxSizing: "border-box", background: "transparent" }}>
                         {productsToRender.map((product) => (
-                            <Card
-                                key={product.id}
-                                onClick={() => handleProductSelect(product.id)}
-                                className="cursor-pointer overflow-hidden bg-zinc-900/30 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/50 rounded-2xl transition-all"
-                            >
-                                <div className="relative">
-                                    <img src={product.image || "https://placehold.co/150"} className="aspect-square w-full object-cover" alt={product.name} />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                            <Card key={product.id} onClick={() => handleProductSelect(product.id)} style={{ display: "flex", flexDirection: "column" }}>
+                                <div style={{ position: "relative", width: "100%", paddingBottom: "100%", overflow: "hidden", background: "#11111844" }}>
+                                    <img src={product.image || "https://placehold.co/150"} alt={product.name} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
                                 </div>
-                                <div className="p-3 flex flex-col gap-1">
-                                    <span className="text-[10px] text-zinc-500">{product.shop?.name ?? t("shop_unknown_shop")}</span>
-                                    <h3 className="text-sm font-bold truncate text-white">{product.name}</h3>
-                                    <p className="text-[11px] text-zinc-400">{product.measure_quantity} {product.measure_type}</p>
-                                    <div className="flex justify-between mt-1">
-                                        <span className="text-emerald-400 font-bold text-sm">{product.price} $</span>
+                                <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 2, flex: 1, minWidth: 0 }}>
+                                    <span style={{ fontSize: 9, fontWeight: 700, color: "#44444F", textTransform: "uppercase", letterSpacing: "0.02em" }}>{product.shop?.name ?? t("shop_unknown_shop")}</span>
+                                    <h3 style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{product.name}</h3>
+                                    <p style={{ fontSize: 11, color: "#8A8A9A", margin: 0 }}>{product.measure_quantity} {product.measure_type}</p>
+                                    <div style={{ marginTop: "auto", paddingTop: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <span style={{ fontSize: 14, fontWeight: 800, color: "#00D2A8" }}>{product.price} $</span>
                                     </div>
                                 </div>
                             </Card>
@@ -323,76 +297,60 @@ const RenderShop = ({ lang = "en" }: { lang?: Lang }) => {
         );
     }
 
-    /* ---- PRODUCT DETAIL ---- */
+    /* ---- 3. PRODUCT DETAIL ---- */
     return (
-        <div className="w-[95%] mx-auto p-4 flex flex-col gap-4">
-            <Button
-                size="sm"
-                variant="flat"
-                onClick={() => {
-                    triggerHaptic('impact', 'light');
-                    setSelectedProduct(0);
-                }}
-                className="self-start bg-zinc-900/40 border border-zinc-800"
-            >
-                {t("shop_back")}
-            </Button>
-
+        <div style={{ padding: "16px 16px 120px", maxWidth: 480, margin: "0 auto", overflowY: "auto", width: "100%", boxSizing: "border-box", background: "transparent" }}>
+            <br />
+            <BackgroundGradient />
             {currentProductData ? (
-                <Card className="w-full p-4 gap-4 bg-zinc-900/30 border border-zinc-800 rounded-3xl shadow-xl">
-                    <div className="flex gap-4 items-center">
-                        <img
-                            src={currentProductData.image || "https://placehold.co/150"}
-                            className="w-24 aspect-square rounded-2xl object-cover border border-zinc-800"
-                            alt={currentProductData.name}
-                        />
+                <Card style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+                    <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                        <img src={currentProductData.image || "https://placehold.co/150"} alt={currentProductData.name} style={{ width: 76, height: 76, borderRadius: 16, objectFit: "cover", border: "1px solid #1E1E2A" }} />
                         <div>
-                            <h2 className="text-lg font-bold text-white">{currentProductData.name}</h2>
-                            <p className="text-xs text-zinc-500">{currentProductData.shop?.name ?? t("shop_unknown_shop")}</p>
+                            <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.3px" }}>{currentProductData.name}</h2>
+                            <p style={{ fontSize: 12, color: "#8A8A9A", margin: "2px 0 0" }}>{currentProductData.shop?.name ?? t("shop_unknown_shop")}</p>
                         </div>
                     </div>
 
-                    <Separator className="bg-zinc-800" />
-                    <p className="text-sm text-zinc-300">{currentProductData.description}</p>
-                    <Separator className="bg-zinc-800" />
+                    <div style={{ height: 1, background: "#1E1E2A" }} />
+                    <p style={{ fontSize: 13, color: "#8A8A9A", margin: 0, lineHeight: 1.6 }}>{currentProductData.description}</p>
+                    <div style={{ height: 1, background: "#1E1E2A" }} />
 
-                    <div className="flex justify-between">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
-                            <p className="text-[10px] text-zinc-500">{t("shop_quantity")}</p>
-                            <p className="text-sm font-bold text-white">{currentProductData.measure_quantity}</p>
+                            <p style={{ fontSize: 10, fontWeight: 700, color: "#44444F", textTransform: "uppercase", margin: "0 0 2px" }}>{t("shop_quantity")}</p>
+                            <p style={{ fontSize: 14, fontWeight: 700, color: "#fff", margin: 0 }}>{currentProductData.measure_quantity} {currentProductData.measure_type}</p>
                         </div>
-                        <div className="text-right">
-                            <p className="text-[10px] text-zinc-500">{t("shop_price")}</p>
-                            <p className="text-xl font-bold text-emerald-400">{currentProductData.price} $</p>
+                        <div style={{ textAlign: "right" }}>
+                            <p style={{ fontSize: 10, fontWeight: 700, color: "#44444F", textTransform: "uppercase", margin: "0 0 2px" }}>{t("shop_price")}</p>
+                            <p style={{ fontSize: 22, fontWeight: 900, color: "#00D2A8", margin: 0 }}>{currentProductData.price} $</p>
                         </div>
                     </div>
 
                     {stashUrl ? (
-                        <div className="flex flex-col gap-3">
-                            <p className="text-xs text-emerald-400 font-semibold text-center">{t("shop_success")}</p>
-                            <Button
-                                variant="flat"
-                                className="w-full rounded-2xl"
-                                onClick={() => {
-                                    triggerHaptic('impact', 'light');
-                                    setStashUrl(null);
-                                    setSelectedProduct(0);
-                                }}
-                            >
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
+                            <Card style={{ background: "#00D2A811", borderColor: "#00D2A833", padding: 12, textAlign: "center" }}>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: "#00D2A8", margin: 0 }}>{t("shop_success")}</p>
+                            </Card>
+                            <button onClick={() => { triggerHaptic('impact', 'light'); setStashUrl(null); setSelectedProduct(0); }}
+                                    style={{ width: "100%", background: "#1E1E2A", color: "#fff", border: "none", borderRadius: 14, padding: "14px 0", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>
                                 {t("shop_back_catalog")}
-                            </Button>
+                            </button>
                         </div>
                     ) : (
-                        <>
-                            {buyError && <p className="text-xs text-red-400 text-center">{buyError}</p>}
-                            <Button color="primary" isLoading={buying} onClick={handleBuy} className="w-full rounded-2xl font-semibold">
-                                {t("shop_buy")}
-                            </Button>
-                        </>
+                        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 10 }}>
+                            {buyError && <p style={{ fontSize: 12, color: "#FF4D6A", textAlign: "center", margin: 0 }}>{buyError}</p>}
+                            <button onClick={handleBuy} disabled={buying}
+                                    style={{ width: "100%", background: "#5C6BFF", color: "#fff", border: "none", borderRadius: 14, padding: "15px 0", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+                                    onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
+                                    onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+                                {buying ? <Spinner size="sm" color="white" /> : t("shop_buy")}
+                            </button>
+                        </div>
                     )}
                 </Card>
             ) : (
-                <p className="text-center text-sm text-zinc-400">{t("shop_product_not_found")}</p>
+                <p style={{ textAlign: "center", fontSize: 13, color: "#8A8A9A" }}>{t("shop_product_not_found")}</p>
             )}
         </div>
     );

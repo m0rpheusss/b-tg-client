@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Button, Spinner, Alert } from "@heroui/react";
+import { Spinner } from "@heroui/react";
 import { translations, type Lang } from "@/app/translations";
 
 const API_BASE = "https://bohemia-api-1.yxwfjh.easypanel.host";
@@ -75,64 +75,90 @@ export default function OrdersSheet({ onClose, lang = "en" }: { onClose: () => v
         }
     };
 
+    const Card = ({ children, style = {} }: { children: React.ReactNode; style?: React.CSSProperties }) => (
+        <div style={{ background: "#111118aa", backdropFilter: "blur(10px)", border: "1px solid #1E1E2A", borderRadius: 20, overflow: "hidden", ...style }}>
+            {children}
+        </div>
+    );
+
     return (
-        <div className="fixed inset-0 bg-[#0b0f19] z-50 flex flex-col p-6 overflow-y-auto" style={{ paddingTop: "calc(var(--tg-safe-area-inset-top, 0px) + 3rem)" }}>
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4 mb-6">
-                <h2 className="text-xl font-bold">{t("orders_title")}</h2>
-                <Button size="sm" variant="ghost" onClick={onClose} className="border border-zinc-700 bg-zinc-900/50 rounded-xl">
-                    {t("btn_back")}
-                </Button>
+        <div style={{
+            position: "fixed", inset: 0,
+            background: "#0A0A0F",
+            zIndex: 50,
+            display: "flex", flexDirection: "column",
+            padding: "0 20px 24px",
+            overflowY: "auto",
+            paddingTop: "calc(var(--tg-safe-area-inset-top, 0px) + 3rem)",
+        }}>
+            {/* Динамический градиент на фоне */}
+            <div style={{ position: "fixed", inset: 0, zIndex: -1, overflow: "hidden", pointerEvents: "none", opacity: 0.15 }}>
+                <div style={{ position: "absolute", top: "-20%", left: "-10%", width: "70vw", height: "70vw", borderRadius: "50%", background: "radial-gradient(circle, #5C6BFF 0%, transparent 70%)", filter: "blur(80px)", animation: "revolutPulse 8s infinite alternate" }} />
+                <div style={{ position: "absolute", bottom: "-10%", right: "-10%", width: "60vw", height: "60vw", borderRadius: "50%", background: "radial-gradient(circle, #00D2A8 0%, transparent 70%)", filter: "blur(80px)", animation: "revolutPulse 12s infinite alternate-reverse" }} />
             </div>
 
-            <div className="max-w-md mx-auto w-full space-y-3">
+            {/* Стили для анимации */}
+            <style>{`
+                @keyframes revolutPulse {
+                    0% { transform: translate(0, 0) scale(1); }
+                    100% { transform: translate(8%, 5%) scale(1.15); }
+                }
+            `}</style>
+
+            <div style={{ paddingBottom: 16, marginBottom: 24, borderBottom: "1px solid #1E1E2A" }}>
+                <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px", color: "#fff", margin: 0 }}>
+                    📦 {t("orders_title")}
+                </h2>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 480, margin: "0 auto", width: "100%" }}>
                 {loading ? (
-                    <div className="flex justify-center pt-12">
+                    <div style={{ display: "flex", justifyContent: "center", paddingTop: 48 }}>
                         <Spinner size="lg" />
                     </div>
                 ) : orders.length === 0 ? (
-                    <Alert variant="flat" className="bg-zinc-900/50 border border-zinc-800 rounded-2xl">
-                        <Alert.Indicator />
-                        <Alert.Content>
-                            <Alert.Title className="text-xs font-semibold text-zinc-300">
-                                {t("orders_empty")}
-                            </Alert.Title>
-                        </Alert.Content>
-                    </Alert>
+                    <Card style={{ padding: 16, textAlign: "center" }}>
+                        <p style={{ fontSize: 13, color: "#8A8A9A", margin: 0 }}>{t("orders_empty")}</p>
+                    </Card>
                 ) : (
                     orders.map((order) => (
-                        <div key={order.id} className="bg-zinc-900/30 border border-zinc-800 rounded-2xl overflow-hidden">
-                            <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => handleExpand(order)}>
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="text-xs font-bold text-white">Order #{order.id}</span>
-                                    <span className="text-[10px] text-zinc-500">
+                        <Card key={order.id}>
+                            <button
+                                onClick={() => handleExpand(order)}
+                                style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "14px 16px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", color: "inherit" }}
+                                onMouseEnter={e => (e.currentTarget.style.background = "#1E1E2A44")}
+                                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                            >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ fontSize: 13, fontWeight: 700, color: "#fff", margin: 0 }}>Order #{order.id}</p>
+                                    <p style={{ fontSize: 11, color: "#8A8A9A", margin: "2px 0 0" }}>
                                         {new Date(order.created_at).toLocaleDateString("en-GB", {
                                             day: "2-digit", month: "short", year: "numeric",
                                             hour: "2-digit", minute: "2-digit",
                                         })}
-                                    </span>
+                                    </p>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="text-emerald-400 font-bold text-sm">${order.amount_paid}</span>
-                                    <span className={`text-zinc-400 text-xs transition-transform duration-200 ${expandedId === order.id ? "rotate-180" : ""}`}>▾</span>
+                                <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                                    <span style={{ fontSize: 14, fontWeight: 800, color: "#00D2A8" }}>${order.amount_paid}</span>
+                                    <span style={{ color: "#44444F", fontSize: 11, transition: "transform 0.2s", transform: expandedId === order.id ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
                                 </div>
-                            </div>
+                            </button>
 
                             {expandedId === order.id && (
-                                <div className="border-t border-zinc-800 p-4">
+                                <div style={{ borderTop: "1px solid #1E1E2A", padding: 16, background: "#0A0A0F66" }}>
                                     {stashLoading[order.id] ? (
-                                        <div className="flex justify-center py-4"><Spinner size="sm" /></div>
+                                        <div style={{ display: "flex", justifyContent: "center", padding: "8px 0" }}><Spinner size="sm" /></div>
                                     ) : stashUrls[order.id] ? (
-                                        <div className="flex flex-col gap-3">
-                                            <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">{t("orders_stash")}</p>
-                                            <img src={stashUrls[order.id]} className="w-full rounded-xl border border-zinc-700 object-cover" />
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                                            <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.06em", color: "#8A8A9A", textTransform: "uppercase", margin: 0 }}>{t("orders_stash")}</p>
+                                            <img src={stashUrls[order.id]} alt="Stash" style={{ width: "100%", borderRadius: 14, border: "1px solid #1E1E2A", objectFit: "cover" }} />
                                         </div>
                                     ) : (
-                                        <p className="text-xs text-zinc-500 text-center">{t("orders_stash_error")}</p>
+                                        <p style={{ fontSize: 12, color: "#FF4D6A", textAlign: "center", margin: 0 }}>{t("orders_stash_error")}</p>
                                     )}
                                 </div>
                             )}
-                        </div>
+                        </Card>
                     ))
                 )}
             </div>
