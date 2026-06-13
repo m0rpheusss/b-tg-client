@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Spinner } from "@heroui/react";
 import { translations, type Lang } from "@/app/translations";
 
-const API_BASE = "https://bohemia-api-1.yxwfjh.easypanel.host";
+const API_BASE = "https://bohemia-api-1.yxwfjh.easypanel.host/";
 
 interface Category {
     id: string;

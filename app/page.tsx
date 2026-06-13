@@ -1,4 +1,4 @@
-// @/app/page.jsx (или ваш файл главной страницы)
+// @/app/page.jsx
 "use client";
 
 import {
@@ -20,7 +20,8 @@ import { translations, langLabels, type Lang } from "@/app/translations";
 type SheetType = "firstaid" | "promo" | "support" | "orders" | null;
 const LANG_STORAGE_KEY = "app_lang";
 
-// Изолированный компонент для шторки промокода (Решает проблему с хуками)
+const API_BASE_URL = "https://bohemia-api-1.yxwfjh.easypanel.host/";
+
 function PromoSheet({ t, user, fetchUserData, base }) {
     const [promoCodeValue, setPromoCodeValue] = useState("");
     const [promoLoading, setPromoLoading] = useState(false);
@@ -46,7 +47,7 @@ function PromoSheet({ t, user, fetchUserData, base }) {
 
             const tok = window.Telegram?.WebApp?.initData || "/*no-auth*/";
 
-            const response = await fetch("https://bohemia-api-1.yxwfjh.easypanel.host/promo-codes/claim", {
+            const response = await fetch(`${API_BASE_URL}/promo-codes/claim`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -60,22 +61,19 @@ function PromoSheet({ t, user, fetchUserData, base }) {
 
             const result = await response.json();
 
-            // Если бэкенд вернул ошибку (например, 404 Not Found)
             if (!response.ok) {
-                // Пытаемся взять системное сообщение от NestJS, иначе выдаем стандартный перевод
                 const serverMessage = result.message;
                 let finalError = t("promo_not_found") || "Промокод не найден";
 
                 if (serverMessage === "Promo code not found" || serverMessage === "Not Found") {
                     finalError = t("promo_not_found") || "Промокод не найден";
                 } else if (serverMessage) {
-                    finalError = serverMessage; // Если бэк прислал другую специфичную ошибку (например, "Promo code expired")
+                    finalError = serverMessage;
                 }
 
                 throw new Error(finalError);
             }
 
-            // Успешная активация
             triggerHaptic("notification", "success");
             setPromoStatus({
                 type: "success",
@@ -83,8 +81,6 @@ function PromoSheet({ t, user, fetchUserData, base }) {
             });
 
             setPromoCodeValue("");
-
-            // Обновляем баланс на главном экране
             fetchUserData(tok).catch(() => {});
 
         } catch (err: any) {
@@ -170,11 +166,379 @@ function PromoSheet({ t, user, fetchUserData, base }) {
     );
 }
 
+// РЕДИЗАЙН: Компонент Поддержки в стиле приложения с поддержкой нативной кнопки Back в TG
+function SupportSheet({ t, base, currentView, onViewChange }) {
+    const [tickets, setTickets] = useState([]);
+    const [activeTicketId, setActiveTicketId] = useState(null);
+
+    const [messageText, setMessageText] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
+    const [errorStatus, setErrorStatus] = useState("");
+
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const loadTickets = useCallback(async () => {
+        const tok = window.Telegram?.WebApp?.initData || "";
+        try {
+            const res = await fetch(`${API_BASE_URL}/support/tickets`, {
+                headers: {
+                    Authorization: `Bearer ${tok}`,
+                    "Content-Type": "application/json"
+                }
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            setTickets(data || []);
+        } catch (e: any) {
+            setErrorStatus(e.message || "Load error");
+        }
+    }, []);
+
+    useEffect(() => {
+        loadTickets();
+        const i = setInterval(loadTickets, 4000);
+        return () => clearInterval(i);
+    }, [loadTickets]);
+
+    const activeTicket: any = tickets.find((t: any) => t.id === activeTicketId);
+    const hasActiveOpenTicket = tickets.some((t: any) => t.status === "OPEN");
+
+    useEffect(() => {
+        if (currentView === "chat") {
+            messagesEndRef.current?.scrollIntoView({behavior: "smooth"});
+        }
+    }, [activeTicket?.messages, currentView]);
+
+    const openChat = (ticketId) => {
+        setActiveTicketId(ticketId);
+        onViewChange("chat");
+    };
+
+    const backToList = () => {
+        onViewChange("list");
+    };
+
+    const sendMessage = async () => {
+        if (!messageText.trim() || !activeTicketId || activeTicket?.status === "CLOSED") return;
+        const tok = window.Telegram?.WebApp?.initData || "";
+        try {
+            setLoading(true);
+            const res = await fetch(`${API_BASE_URL}/support/message`, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${tok}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    message: messageText.trim(),
+                    ticketId: activeTicketId
+                })
+            });
+            if (!res.ok) throw new Error("Send failed");
+            setMessageText("");
+            await loadTickets();
+        } catch (e: any) {
+            setErrorStatus(e.message || "Send error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const Card = ({children, style = {}}: { children: React.ReactNode; style?: React.CSSProperties }) => (
+        <div style={{
+            background: "#111118",
+            border: "1px solid #1E1E2A",
+            borderRadius: 20,
+            overflow: "hidden", ...style
+        }}>{children}</div>
+    );
+
+    // =========================
+    // ЭКРАН 1: СПИСОК ТИКЕТОВ (INBOX)
+    // =========================
+    if (currentView === "list") {
+        return (
+            <div style={{
+                ...base,
+                display: "flex",
+                flexDirection: "column",
+                height: "100vh",
+                paddingLeft: 16,
+                paddingRight: 16
+            }}>
+                <div style={{paddingBottom: 16, marginBottom: 20, borderBottom: "1px solid #1E1E2A"}}>
+                    <h2 style={{
+                        fontSize: 22,
+                        fontWeight: 800,
+                        letterSpacing: "-0.5px",
+                        color: "#fff",
+                        margin: 0
+                    }}> {t("support_title")}</h2>
+                </div>
+
+                <div style={{
+                    flex: 1,
+                    overflowY: "auto",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                    paddingBottom: 20
+                }}>
+                    {tickets.length === 0 && (
+                        <div
+                            style={{padding: 40, color: "#44444F", textAlign: "center", fontSize: 13, fontWeight: 600}}>
+                            No conversations yet
+                        </div>
+                    )}
+
+                    {tickets.map((ticket: any) => (
+                        <Card key={ticket.id}>
+                            <button
+                                onClick={() => openChat(ticket.id)}
+                                style={{
+                                    width: "100%",
+                                    textAlign: "left",
+                                    padding: "16px 20px",
+                                    border: "none",
+                                    background: "transparent",
+                                    color: "#fff",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center"
+                                }}
+                            >
+                                <div>
+                                    <div style={{fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4}}>
+                                        {ticket.subject || `Ticket #${ticket.id}`}
+                                    </div>
+                                    {/*<div style={{ fontSize: 11, color: "#8A8A9A" }}>*/}
+                                    {/*    ID: {ticket.id}*/}
+                                    {/*</div>*/}
+                                </div>
+                                <span style={{
+                                    background: ticket.status === "OPEN" ? "#00D2A81A" : "#FF4D6A1A",
+                                    color: ticket.status === "OPEN" ? "#00D2A8" : "#FF4D6A",
+                                    border: `1px solid ${ticket.status === "OPEN" ? "#00D2A833" : "#FF4D6A33"}`,
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    letterSpacing: "0.04em",
+                                    padding: "3px 10px",
+                                    borderRadius: 99
+                                }}>
+                                    {ticket.status === "CLOSED" ? "CLOSED" : "OPEN"}
+                                </span>
+                            </button>
+                        </Card>
+                    ))}
+                </div>
+
+                {!hasActiveOpenTicket && (
+                    <button
+                        disabled={isCreating}
+                        onClick={async () => {
+                            if (isCreating) return;
+                            const tok = window.Telegram?.WebApp?.initData || "";
+                            try {
+                                setIsCreating(true);
+                                const res = await fetch(`${API_BASE_URL}/support/message`, {
+                                    method: "POST",
+                                    headers: {
+                                        Authorization: `Bearer ${tok}`,
+                                        "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify({
+                                        message: "👋 New support request"
+                                    })
+                                });
+                                await loadTickets?.();
+                                const updatedTickets: any = await fetch(`${API_BASE_URL}/support/tickets`, {
+                                    headers: {Authorization: `Bearer ${tok}`, "Content-Type": "application/json"}
+                                }).then(r => r.json()).catch(() => []);
+
+                                const newOpenTicket = updatedTickets.find((t: any) => t.status === "OPEN");
+                                if (newOpenTicket) {
+                                    setActiveTicketId(newOpenTicket.id);
+                                }
+                                setTimeout(() => {
+                                    onViewChange("chat");
+                                    setIsCreating(false);
+                                }, 300);
+                            } catch (e) {
+                                console.log(e);
+                                setIsCreating(false);
+                            }
+                        }}
+                        style={{
+                            width: "100%",
+                            padding: "15px 0",
+                            borderRadius: 14,
+                            border: "none",
+                            background: isCreating ? "#1E1E2A" : "#5C6BFF",
+                            color: isCreating ? "#44444F" : "#fff",
+                            fontSize: 14,
+                            fontWeight: 700,
+                            cursor: isCreating ? "not-allowed" : "pointer",
+                            marginBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
+                            transition: "all 0.2s"
+                        }}
+                    >
+                        {isCreating ? "Creating..." : "Start new chat"}
+                    </button>
+                )}
+            </div>
+        );
+    }
+
+    // =========================
+    // ЭКРАН 2: ЧАТ С ПОДДЕРЖКОЙ
+    // =========================
+    const isClosed = activeTicket?.status === "CLOSED";
+
+    return (
+        <div style={{
+            ...base,
+            display: "flex",
+            flexDirection: "column",
+            height: "100vh",
+            paddingLeft: 16,
+            paddingRight: 16
+        }}>
+            {/* ШАПКА ЧАТА (Mirrors Screen 1 list header spacing) */}
+            <div style={{
+                paddingBottom: 16,
+                marginBottom: 20,
+                borderBottom: "1px solid #1E1E2A",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingTop: 16
+            }}>
+                <div style={{display: "flex", alignItems: "center", gap: 12}}>
+                    <div>
+                        <h2 style={{fontSize: 15, fontWeight: 800, color: "#fff", margin: 0}}>
+                            {activeTicket?.subject || `Ticket #${activeTicketId}`}
+                        </h2>
+                    </div>
+                </div>
+                <span style={{
+                    background: isClosed ? "#FF4D6A1A" : "#00D2A81A",
+                    color: isClosed ? "#FF4D6A" : "#00D2A8",
+                    border: `1px solid ${isClosed ? "#FF4D6A33" : "#00D2A833"}`,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: "3px 10px",
+                    borderRadius: 99
+                }}>
+                    {isClosed ? "CLOSED" : "OPEN"}
+                </span>
+            </div>
+
+            {/* ТЕЛО ДИАЛОГА */}
+            <div style={{
+                flex: 1,
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                paddingBottom: 20
+            }}>
+                {(activeTicket?.messages || []).map((msg: any, i: number) => {
+                    const isUser = msg.sender === "USER";
+                    return (
+                        <div
+                            key={i}
+                            style={{
+                                alignSelf: isUser ? "flex-end" : "flex-start",
+                                maxWidth: "75%",
+                                background: isUser ? "#5C6BFF" : "#111118",
+                                border: isUser ? "none" : "1px solid #1E1E2A",
+                                padding: "12px 16px",
+                                borderRadius: isUser ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                                fontSize: 13,
+                                lineHeight: 1.5,
+                                color: "#fff",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
+                            }}
+                        >
+                            {msg.message}
+                        </div>
+                    );
+                })}
+                <div ref={messagesEndRef}/>
+            </div>
+
+            {/* БЛОК ОТПРАВКИ (Mirrors Screen 1 bottom button spacing) */}
+            {isClosed ? (
+                <div style={{
+                    padding: "15px 0",
+                    borderTop: "1px solid #1E1E2A",
+                    color: "#FF4D6A",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    textAlign: "center",
+                    letterSpacing: "0.02em",
+                    marginBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)"
+                }}>
+                    🔒 This conversation is closed by administrator.
+                </div>
+            ) : (
+                <div style={{
+                    display: "flex",
+                    gap: 10,
+                    paddingTop: 12,
+                    paddingBottom: 12,
+                    marginBottom: "calc(env(safe-area-inset-bottom, 0px) + 10px)",
+                    borderTop: "1px solid #1E1E2A"
+                }}>
+                    <input
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                        placeholder="Type a message..."
+                        disabled={loading}
+                        style={{
+                            flex: 1,
+                            background: "#111118",
+                            border: "1px solid #1E1E2A",
+                            borderRadius: 14,
+                            padding: "14px 16px",
+                            color: "#fff",
+                            fontSize: 14,
+                            outline: "none",
+                            transition: "border 0.2s"
+                        }}
+                    />
+                    <button
+                        onClick={sendMessage}
+                        disabled={loading || !messageText.trim()}
+                        style={{
+                            background: messageText.trim() && !loading ? "#5C6BFF" : "#1E1E2A",
+                            border: "none",
+                            borderRadius: 14,
+                            padding: "0 20px",
+                            color: messageText.trim() && !loading ? "#fff" : "#44444F",
+                            fontSize: 15,
+                            fontWeight: 800,
+                            cursor: messageText.trim() && !loading ? "pointer" : "not-allowed",
+                            transition: "all 0.2s"
+                        }}
+                    >
+                        ➤
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function Home() {
     const [loading, setLoading] = useState(true);
     const [selectedTab, setSelectedTab] = useState("home");
     const [user, setUser] = useState<any>(null);
     const [activeSheet, setActiveSheet] = useState<SheetType>(null);
+    const [supportView, setSupportView] = useState<"list" | "chat">("list");
     const [lang, setLang] = useState<Lang>("en");
 
     const requestInitialized = useRef(false);
@@ -205,7 +569,7 @@ export default function Home() {
     }
 
     const fetchUserData = useCallback((token: string) => {
-        return fetch(`https://bohemia-api-1.yxwfjh.easypanel.host/user`, {
+        return fetch(`${API_BASE_URL}/user`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -238,25 +602,37 @@ export default function Home() {
         return () => clearInterval(id);
     }, [fetchUserData]);
 
+    // УЛУЧШЕНО: Обработка системной кнопки Back в Telegram с учетом вложенного вида поддержки
     useEffect(() => {
         const bb = window.Telegram?.WebApp?.BackButton;
         if (!bb) return;
+
         if (activeSheet !== null) {
             bb.show();
-            const h = () => { triggerHaptic("impact", "light"); setActiveSheet(null); };
-            bb.onClick(h);
-            return () => { bb.offClick(h); bb.hide(); };
+            const handleBackPress = () => {
+                triggerHaptic("impact", "light");
+
+                // Если мы находимся внутри чата техподдержки, возвращаемся к списку тикетов
+                if (activeSheet === "support" && supportView === "chat") {
+                    setSupportView("list");
+                } else {
+                    // Иначе закрываем текущую шторку
+                    setActiveSheet(null);
+                }
+            };
+            bb.onClick(handleBackPress);
+            return () => { bb.offClick(handleBackPress); bb.hide(); };
         } else {
             bb.hide();
         }
-    }, [activeSheet]);
+    }, [activeSheet, supportView]);
 
     const handleTopup = async () => {
         if (!topupAmount || isNaN(Number(topupAmount))) return;
         try {
             setTopupLoading(true);
             const tok = window.Telegram.WebApp.initData || "/*no-auth*/";
-            const r = await fetch("https://bohemia-api-1.yxwfjh.easypanel.host/balance/create", {
+            const r = await fetch(`${API_BASE_URL}/balance/create`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
                 body: JSON.stringify({ amount: Number(topupAmount), userId: user?.id }),
@@ -274,21 +650,6 @@ export default function Home() {
         </span>
     );
 
-    const Row = ({ icon, title, sub, right, onClick }: { icon: React.ReactNode; title: string; sub?: string; right?: React.ReactNode; onClick?: () => void }) => (
-        <button onClick={onClick} className="w-full flex items-center gap-3 px-4 py-3.5 transition-colors" style={{ background: "transparent", border: "none", color: "inherit", textAlign: "left" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#1E1E2A")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: "#1E1E2A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {icon}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "#fff", margin: 0 }}>{title}</p>
-                {sub && <p style={{ fontSize: 11, color: "#8A8A9A", margin: 0, marginTop: 1 }}>{sub}</p>}
-            </div>
-            {right && <div style={{ flexShrink: 0 }}>{right}</div>}
-        </button>
-    );
-
     const Card = ({ children, className = "", style = {} }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) => (
         <div className={className} style={{ background: "#111118", border: "1px solid #1E1E2A", borderRadius: 20, overflow: "hidden", ...style }}>
             {children}
@@ -304,12 +665,18 @@ export default function Home() {
 
     const renderSubPage = () => {
         const base: React.CSSProperties = {
-            position: "fixed", inset: 0,
+            position: "fixed",
+            inset: 0,
             background: "#0A0A0F",
             zIndex: 50,
-            display: "flex", flexDirection: "column",
-            padding: "0 20px 24px",
+            display: "flex",
+            flexDirection: "column",
             overflowY: "auto",
+            // 1. Remove the shorthand 'padding'
+            // 2. Breakdown the specific sides explicitly:
+            paddingLeft: 20,
+            paddingRight: 20,
+            paddingBottom: 24,
             paddingTop: "calc(var(--tg-safe-area-inset-top, 0px) + 3rem)",
         };
 
@@ -376,7 +743,6 @@ export default function Home() {
                 </div>
             );
 
-            // Передаем пропсы в наш новый чистый дочерний компонент
             case "promo": return (
                 <PromoSheet
                     t={t}
@@ -387,25 +753,12 @@ export default function Home() {
             );
 
             case "support": return (
-                <div style={base}>
-                    <SheetHeader title={t("support_title")} />
-                    <Card style={{ marginBottom: 12 }}>
-                        <div style={{ padding: 16, display: "flex", alignItems: "center", gap: 10 }}>
-                            <span style={{ fontSize: 18 }}>⚠️</span>
-                            <p style={{ fontSize: 12, color: "#8A8A9A", margin: 0 }}>{t("support_unavailable")}</p>
-                        </div>
-                    </Card>
-                    <Card style={{ marginBottom: 12 }}>
-                        <div style={{ padding: 16 }}>
-                            <p style={{ fontSize: 12, color: "#44444F", margin: 0 }}>{t("support_no_convos")}</p>
-                        </div>
-                    </Card>
-                    <textarea disabled placeholder={t("support_placeholder")} rows={5}
-                              style={{ width: "100%", boxSizing: "border-box", background: "#111118", border: "1px solid #1E1E2A", borderRadius: 14, color: "#44444F", padding: "14px 16px", fontSize: 14, outline: "none", resize: "none", marginBottom: 12, fontFamily: "inherit" }} />
-                    <button disabled style={{ width: "100%", background: "#1E1E2A", color: "#44444F", border: "none", borderRadius: 14, padding: "15px 0", fontSize: 14, fontWeight: 700, cursor: "not-allowed" }}>
-                        {t("support_btn")}
-                    </button>
-                </div>
+                <SupportSheet
+                    t={t}
+                    base={base}
+                    currentView={supportView}
+                    onViewChange={setSupportView}
+                />
             );
 
             case "orders":
@@ -448,7 +801,7 @@ export default function Home() {
                             { label: t("btn_support"), icon: "💬", color: "#8A8A9A", sheet: "support" as SheetType },
                             { label: t("btn_orders"), icon: "📦", color: "#00D2A8", sheet: "orders" as SheetType },
                         ].map(({ label, icon, color, sheet }, i, arr) => (
-                            <button key={sheet} onClick={() => { setActiveSheet(sheet); triggerHaptic("impact"); }}
+                            <button key={sheet} onClick={() => { setSupportView("list"); setActiveSheet(sheet); triggerHaptic("impact"); }}
                                     style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "16px 8px", background: "transparent", border: "none", borderRight: i < arr.length - 1 ? "1px solid #1E1E2A" : "none", cursor: "pointer", transition: "background 0.15s" }}
                                     onMouseEnter={e => (e.currentTarget.style.background = "#1E1E2A")}
                                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
@@ -461,18 +814,18 @@ export default function Home() {
                     </div>
                 </Card>
 
-                <Card style={{ marginBottom: 12, borderColor: "#FF4D6A22" }}>
-                    <div style={{ padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
-                        <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>⚠️</span>
-                        <div>
-                            <p style={{ fontSize: 12, fontWeight: 700, color: "#FF4D6A", margin: "0 0 4px" }}>{t("alert_downtime")}</p>
-                            <p style={{ fontSize: 11, color: "#8A8A9A", margin: 0, lineHeight: 1.6 }}>
-                                • {t("alert_downtime_promo")}<br />
-                                • {t("alert_downtime_support")}
-                            </p>
-                        </div>
-                    </div>
-                </Card>
+                {/*<Card style={{ marginBottom: 12, borderColor: "#FF4D6A22" }}>*/}
+                {/*    <div style={{ padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>*/}
+                {/*        <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>⚠️</span>*/}
+                {/*        <div>*/}
+                {/*            <p style={{ fontSize: 12, fontWeight: 700, color: "#FF4D6A", margin: "0 0 4px" }}>{t("alert_downtime")}</p>*/}
+                {/*            <p style={{ fontSize: 11, color: "#8A8A9A", margin: 0, lineHeight: 1.6 }}>*/}
+                {/*                • {t("alert_downtime_promo")}<br />*/}
+                {/*                • {t("alert_downtime_support")}*/}
+                {/*            </p>*/}
+                {/*        </div>*/}
+                {/*    </div>*/}
+                {/*</Card>*/}
 
                 <Card style={{ marginBottom: 12 }}>
                     <div style={{ padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
@@ -589,6 +942,7 @@ export default function Home() {
             return (
                 <div style={{ padding: "0 16px 120px", maxWidth: 480, margin: "0 auto", overflowY: "auto", height: "90vh" }}>
                     <div style={{ paddingTop: 8 }} />
+                    <br />
 
                     <Card style={{ margin: "0 0 12px" }}>
                         <div style={{ padding: "20px 16px 16px", display: "flex", alignItems: "center", gap: 14 }}>
