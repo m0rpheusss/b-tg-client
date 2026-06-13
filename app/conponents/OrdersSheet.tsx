@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Spinner } from "@heroui/react";
 import { translations, type Lang } from "@/app/translations";
 
-const API_BASE = "https://bohemia-api-1.yxwfjh.easypanel.host/";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 interface Order {
     id: number;
@@ -39,6 +39,7 @@ export default function OrdersSheet({ onClose, lang = "en" }: { onClose: () => v
                     setOrders(data);
                 } else if (data && Array.isArray(data.orders)) {
                     setOrders(data.orders);
+                    window.sessionStorage.setItem("total_orders", data.orders.length)
                 } else {
                     setOrders([]);
                 }
@@ -107,7 +108,7 @@ export default function OrdersSheet({ onClose, lang = "en" }: { onClose: () => v
 
             <div style={{ paddingBottom: 16, marginBottom: 24, borderBottom: "1px solid #1E1E2A" }}>
                 <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px", color: "#fff", margin: 0 }}>
-                    📦 {t("orders_title")}
+                    {t("orders_title")}
                 </h2>
             </div>
 

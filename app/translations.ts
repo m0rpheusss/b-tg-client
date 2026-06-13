@@ -75,6 +75,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         promo_desc: "Enter your promo code below to apply a discount to your account balance.",
         promo_placeholder: "e.g. BOHEMIA20",
         promo_btn: "Apply Code",
+        promo_not_found: "Promo not found",
 
         // Support sheet
         support_title: "💬 Support",

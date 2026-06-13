@@ -11,7 +11,7 @@ import {
     ListBox,
     Header, Description, Label, Switch
 } from "@heroui/react";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {useEffect, useRef, useState, useCallback, use} from "react";
 import RenderShop from "@/app/conponents/shop/RenderShop";
 import ChevronDown from "@spectrum-icons/workflow/ChevronDown";
 import OrdersSheet from "@/app/conponents/OrdersSheet";
@@ -20,7 +20,7 @@ import { translations, langLabels, type Lang } from "@/app/translations";
 type SheetType = "firstaid" | "promo" | "support" | "orders" | null;
 const LANG_STORAGE_KEY = "app_lang";
 
-const API_BASE_URL = "https://bohemia-api-1.yxwfjh.easypanel.host/";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 function PromoSheet({ t, user, fetchUserData, base }) {
     const [promoCodeValue, setPromoCodeValue] = useState("");
@@ -167,39 +167,14 @@ function PromoSheet({ t, user, fetchUserData, base }) {
 }
 
 // РЕДИЗАЙН: Компонент Поддержки в стиле приложения с поддержкой нативной кнопки Back в TG
-function SupportSheet({ t, base, currentView, onViewChange }) {
-    const [tickets, setTickets] = useState([]);
+function SupportSheet({ t, base, currentView, onViewChange, tickets, loadTickets }) {
     const [activeTicketId, setActiveTicketId] = useState(null);
-
     const [messageText, setMessageText] = useState("");
     const [loading, setLoading] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
     const [errorStatus, setErrorStatus] = useState("");
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    const loadTickets = useCallback(async () => {
-        const tok = window.Telegram?.WebApp?.initData || "";
-        try {
-            const res = await fetch(`${API_BASE_URL}/support/tickets`, {
-                headers: {
-                    Authorization: `Bearer ${tok}`,
-                    "Content-Type": "application/json"
-                }
-            });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            setTickets(data || []);
-        } catch (e: any) {
-            setErrorStatus(e.message || "Load error");
-        }
-    }, []);
-
-    useEffect(() => {
-        loadTickets();
-        const i = setInterval(loadTickets, 4000);
-        return () => clearInterval(i);
-    }, [loadTickets]);
 
     const activeTicket: any = tickets.find((t: any) => t.id === activeTicketId);
     const hasActiveOpenTicket = tickets.some((t: any) => t.status === "OPEN");
@@ -213,10 +188,6 @@ function SupportSheet({ t, base, currentView, onViewChange }) {
     const openChat = (ticketId) => {
         setActiveTicketId(ticketId);
         onViewChange("chat");
-    };
-
-    const backToList = () => {
-        onViewChange("list");
     };
 
     const sendMessage = async () => {
@@ -313,9 +284,6 @@ function SupportSheet({ t, base, currentView, onViewChange }) {
                                     <div style={{fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4}}>
                                         {ticket.subject || `Ticket #${ticket.id}`}
                                     </div>
-                                    {/*<div style={{ fontSize: 11, color: "#8A8A9A" }}>*/}
-                                    {/*    ID: {ticket.id}*/}
-                                    {/*</div>*/}
                                 </div>
                                 <span style={{
                                     background: ticket.status === "OPEN" ? "#00D2A81A" : "#FF4D6A1A",
@@ -342,6 +310,8 @@ function SupportSheet({ t, base, currentView, onViewChange }) {
                             const tok = window.Telegram?.WebApp?.initData || "";
                             try {
                                 setIsCreating(true);
+                                setErrorStatus(null);
+
                                 const res = await fetch(`${API_BASE_URL}/support/message`, {
                                     method: "POST",
                                     headers: {
@@ -352,21 +322,34 @@ function SupportSheet({ t, base, currentView, onViewChange }) {
                                         message: "👋 New support request"
                                     })
                                 });
-                                await loadTickets?.();
+
+                                if (!res.ok) {
+                                    throw new Error(`Error ${res.status}`);
+                                }
+
                                 const updatedTickets: any = await fetch(`${API_BASE_URL}/support/tickets`, {
-                                    headers: {Authorization: `Bearer ${tok}`, "Content-Type": "application/json"}
-                                }).then(r => r.json()).catch(() => []);
+                                    headers: { Authorization: `Bearer ${tok}`, "Content-Type": "application/json" }
+                                }).then(r => {
+                                    if (!r.ok) throw new Error(`Error ${r.status}`);
+                                    return r.json();
+                                }).catch((err) => {
+                                    throw err;
+                                });
 
                                 const newOpenTicket = updatedTickets.find((t: any) => t.status === "OPEN");
                                 if (newOpenTicket) {
                                     setActiveTicketId(newOpenTicket.id);
                                 }
+
+                                await loadTickets?.();
+
                                 setTimeout(() => {
                                     onViewChange("chat");
                                     setIsCreating(false);
                                 }, 300);
-                            } catch (e) {
-                                console.log(e);
+                            } catch (e: any) {
+                                console.error(e);
+                                setErrorStatus(e.message || "Send error");
                                 setIsCreating(false);
                             }
                         }}
@@ -375,8 +358,8 @@ function SupportSheet({ t, base, currentView, onViewChange }) {
                             padding: "15px 0",
                             borderRadius: 14,
                             border: "none",
-                            background: isCreating ? "#1E1E2A" : "#5C6BFF",
-                            color: isCreating ? "#44444F" : "#fff",
+                            background: isCreating ? "#1E1E2A" : errorStatus ? "#FF4D6A2A" : "#5C6BFF",
+                            color: isCreating ? "#44444F" : errorStatus ? "#FF4D6A" : "#fff",
                             fontSize: 14,
                             fontWeight: 700,
                             cursor: isCreating ? "not-allowed" : "pointer",
@@ -384,7 +367,7 @@ function SupportSheet({ t, base, currentView, onViewChange }) {
                             transition: "all 0.2s"
                         }}
                     >
-                        {isCreating ? "Creating..." : "Start new chat"}
+                        {isCreating ? "Creating..." : errorStatus ? `${errorStatus} - Try Again` : "Start new conversation"}
                     </button>
                 )}
             </div>
@@ -405,7 +388,6 @@ function SupportSheet({ t, base, currentView, onViewChange }) {
             paddingLeft: 16,
             paddingRight: 16
         }}>
-            {/* ШАПКА ЧАТА (Mirrors Screen 1 list header spacing) */}
             <div style={{
                 paddingBottom: 16,
                 marginBottom: 20,
@@ -435,7 +417,6 @@ function SupportSheet({ t, base, currentView, onViewChange }) {
                 </span>
             </div>
 
-            {/* ТЕЛО ДИАЛОГА */}
             <div style={{
                 flex: 1,
                 overflowY: "auto",
@@ -469,7 +450,6 @@ function SupportSheet({ t, base, currentView, onViewChange }) {
                 <div ref={messagesEndRef}/>
             </div>
 
-            {/* БЛОК ОТПРАВКИ (Mirrors Screen 1 bottom button spacing) */}
             {isClosed ? (
                 <div style={{
                     padding: "15px 0",
@@ -537,6 +517,7 @@ export default function Home() {
     const [loading, setLoading] = useState(true);
     const [selectedTab, setSelectedTab] = useState("home");
     const [user, setUser] = useState<any>(null);
+    const [tickets, setTickets] = useState<any[]>([]); // Lifted up from SupportSheet
     const [activeSheet, setActiveSheet] = useState<SheetType>(null);
     const [supportView, setSupportView] = useState<"list" | "chat">("list");
     const [lang, setLang] = useState<Lang>("en");
@@ -544,6 +525,8 @@ export default function Home() {
     const requestInitialized = useRef(false);
     const [topupAmount, setTopupAmount] = useState("");
     const [topupLoading, setTopupLoading] = useState(false);
+
+    const [ totalOrders, setTotalOrders ] = useState(0)
 
     const t = useCallback((key: string) => translations[lang][key] ?? key, [lang]);
 
@@ -582,6 +565,24 @@ export default function Home() {
             .catch((e) => console.error("❌", e));
     }, []);
 
+    const loadTickets = useCallback(async () => {
+        const tok = window.Telegram?.WebApp?.initData || "";
+        try {
+            const res = await fetch(`${API_BASE_URL}/support/tickets`, {
+                headers: {
+                    Authorization: `Bearer ${tok}`,
+                    "Content-Type": "application/json"
+                }
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            setTickets(data || []);
+        } catch (e: any) {
+            console.error("Load tickets error", e);
+        }
+    }, []);
+
+    // Single consolidated application polling lifecycle loop
     useEffect(() => {
         if (typeof window === "undefined" || !window.Telegram?.WebApp) { setLoading(false); return; }
         if (requestInitialized.current) return;
@@ -591,18 +592,26 @@ export default function Home() {
         tg.expand();
         if (tg?.platform === "android" || tg?.platform === "ios") tg.requestFullscreen?.();
         tg.ready();
+
         let id: NodeJS.Timeout;
         const go = async () => {
             const tok = () => tg.initData || "/*no-auth*/";
-            await fetchUserData(tok()).catch(() => {});
+            await Promise.all([
+                fetchUserData(tok()).catch(() => {}),
+                loadTickets().catch(() => {})
+            ]);
             setLoading(false);
-            id = setInterval(() => fetchUserData(tok()).catch(() => {}), 5000);
+
+            id = setInterval(() => {
+                const currentToken = tok();
+                fetchUserData(currentToken).catch(() => {});
+                loadTickets().catch(() => {});
+            }, 5000);
         };
         go();
         return () => clearInterval(id);
-    }, [fetchUserData]);
+    }, [fetchUserData, loadTickets]);
 
-    // УЛУЧШЕНО: Обработка системной кнопки Back в Telegram с учетом вложенного вида поддержки
     useEffect(() => {
         const bb = window.Telegram?.WebApp?.BackButton;
         if (!bb) return;
@@ -612,11 +621,9 @@ export default function Home() {
             const handleBackPress = () => {
                 triggerHaptic("impact", "light");
 
-                // Если мы находимся внутри чата техподдержки, возвращаемся к списку тикетов
                 if (activeSheet === "support" && supportView === "chat") {
                     setSupportView("list");
                 } else {
-                    // Иначе закрываем текущую шторку
                     setActiveSheet(null);
                 }
             };
@@ -672,8 +679,6 @@ export default function Home() {
             display: "flex",
             flexDirection: "column",
             overflowY: "auto",
-            // 1. Remove the shorthand 'padding'
-            // 2. Breakdown the specific sides explicitly:
             paddingLeft: 20,
             paddingRight: 20,
             paddingBottom: 24,
@@ -758,6 +763,8 @@ export default function Home() {
                     base={base}
                     currentView={supportView}
                     onViewChange={setSupportView}
+                    tickets={tickets}
+                    loadTickets={loadTickets}
                 />
             );
 
@@ -769,6 +776,7 @@ export default function Home() {
     };
 
     const renderTab = () => {
+
         const faq = [
             { q: t("faq_q1"), a: t("faq_a1") },
             { q: t("faq_q2"), a: t("faq_a2") },
@@ -813,19 +821,6 @@ export default function Home() {
                         ))}
                     </div>
                 </Card>
-
-                {/*<Card style={{ marginBottom: 12, borderColor: "#FF4D6A22" }}>*/}
-                {/*    <div style={{ padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>*/}
-                {/*        <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>⚠️</span>*/}
-                {/*        <div>*/}
-                {/*            <p style={{ fontSize: 12, fontWeight: 700, color: "#FF4D6A", margin: "0 0 4px" }}>{t("alert_downtime")}</p>*/}
-                {/*            <p style={{ fontSize: 11, color: "#8A8A9A", margin: 0, lineHeight: 1.6 }}>*/}
-                {/*                • {t("alert_downtime_promo")}<br />*/}
-                {/*                • {t("alert_downtime_support")}*/}
-                {/*            </p>*/}
-                {/*        </div>*/}
-                {/*    </div>*/}
-                {/*</Card>*/}
 
                 <Card style={{ marginBottom: 12 }}>
                     <div style={{ padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
@@ -906,9 +901,32 @@ export default function Home() {
                             <p style={{ fontSize: 11, color: "#8A8A9A", margin: "0 0 10px" }}>{t("wallet_topup_desc")}</p>
                             <div style={{ position: "relative", marginBottom: 12 }}>
                                 <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, color: "#8A8A9A", pointerEvents: "none" }}>$</span>
-                                <input type="number" value={topupAmount} onChange={e => setTopupAmount(e.target.value)}
-                                       placeholder={t("wallet_topup_placeholder")}
-                                       style={{ width: "100%", boxSizing: "border-box", background: "#0A0A0F", border: "1px solid #1E1E2A", borderRadius: 12, color: "#fff", padding: "13px 14px 13px 30px", fontSize: 15, fontWeight: 700, outline: "none", fontFamily: "inherit" }} />
+                                <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={topupAmount}
+                                    onChange={e => {
+                                        let val = e.target.value;
+                                        val = val.replace(",", ".");
+                                        if (/^\d*\.?\d*$/.test(val)) {
+                                            setTopupAmount(val);
+                                        }
+                                    }}
+                                    placeholder={t("wallet_topup_placeholder")}
+                                    style={{
+                                        width: "100%",
+                                        boxSizing: "border-box",
+                                        background: "#0A0A0F",
+                                        border: "1px solid #1E1E2A",
+                                        borderRadius: 12,
+                                        color: "#fff",
+                                        padding: "13px 14px 13px 30px",
+                                        fontSize: 15,
+                                        fontWeight: 700,
+                                        outline: "none",
+                                        fontFamily: "inherit"
+                                    }}
+                                />
                             </div>
                             <button onClick={handleTopup} disabled={topupLoading || !topupAmount}
                                     style={{ width: "100%", background: topupAmount ? "#00D2A8" : "#1E1E2A", color: topupAmount ? "#000" : "#44444F", border: "none", borderRadius: 12, padding: "14px 0", fontSize: 14, fontWeight: 800, cursor: topupAmount ? "pointer" : "not-allowed", transition: "all 0.2s", letterSpacing: "0.01em" }}>
@@ -934,10 +952,32 @@ export default function Home() {
         }
 
         if (selectedTab === "settings") {
+
+            const token = window.Telegram?.WebApp?.initData || "/*no-auth*/";
+
+            fetch(`${API_BASE_URL}/orders`, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+                .then((r) => {
+                    if (!r.ok) throw new Error("Network response was not ok");
+                    return r.json();
+                })
+                .then((data) => {
+                    if (Array.isArray(data)) {
+                        setTotalOrders(data.length);
+                    } else if (data && Array.isArray(data.orders)) {
+                        setTotalOrders(data.orders.length);
+                        window.sessionStorage.setItem("total_orders", data.orders.length)
+                    }
+                })
+
             const Card = ({ children, style = {} }: { children: React.ReactNode; style?: React.CSSProperties }) => (
                 <div style={{ background: "#111118", border: "1px solid #1E1E2A", borderRadius: 20, overflow: "hidden", ...style }}>{children}</div>
             );
             const Divider = () => <div style={{ height: 1, background: "#1E1E2A", margin: "0 16px" }} />;
+
+            // Dynamic Counter Values Computed directly from system State hooks
+            const totalDisputes = tickets.length || 0;
 
             return (
                 <div style={{ padding: "0 16px 120px", maxWidth: 480, margin: "0 auto", overflowY: "auto", height: "90vh" }}>
@@ -953,13 +993,13 @@ export default function Home() {
                                 </p>
                                 <p style={{ fontSize: 12, color: "#8A8A9A", margin: "2px 0 0" }}>@{user?.id ?? ""}</p>
                             </div>
-                            <Pill label={`Lv ${user?.level ?? 1}`} color="#5C6BFF" />
+                            {/*<Pill label="User" color="#5C6BFF" />*/}
                         </div>
                         <Divider />
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", padding: "12px 0" }}>
                             {[
-                                { label: t("settings_orders"), val: "0", color: "#fff" },
-                                { label: t("settings_disputes"), val: "0", color: "#fff" },
+                                { label: t("settings_orders"), val: String(totalOrders), color: "#10cb82" },
+                                { label: t("settings_disputes"), val: String(totalDisputes), color: "orange" },
                                 { label: t("settings_level"), val: String(user?.level ?? 1), color: "#5C6BFF" },
                             ].map(({ label, val, color }, i, arr) => (
                                 <div key={label} style={{ textAlign: "center", borderRight: i < arr.length - 1 ? "1px solid #1E1E2A" : "none", padding: "4px 0" }}>
