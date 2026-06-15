@@ -635,20 +635,48 @@ export default function Home() {
     }, [activeSheet, supportView]);
 
     const handleTopup = async () => {
-        if (!topupAmount || isNaN(Number(topupAmount))) return;
+        const amountNum = Number(topupAmount);
+        if (!topupAmount || isNaN(amountNum) || amountNum <= 0) return;
         try {
             setTopupLoading(true);
-            const tok = window.Telegram.WebApp.initData || "/*no-auth*/";
+            triggerHaptic("impact", "medium");
+
+            const tg = window.Telegram?.WebApp;
+            const tok = tg?.initData || "/*no-auth*/";
+
             const r = await fetch(`${API_BASE_URL}/balance/create`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Authorization: `Bearer ${tok}` },
-                body: JSON.stringify({ amount: Number(topupAmount), userId: user?.id }),
+                body: JSON.stringify({ amount: amountNum, userId: user?.id }),
             });
-            if (!r.ok) throw new Error();
+
+            if (!r.ok) throw new Error("Backend returned error status");
             const d = await r.json();
-            if (d?.payUrl) window.open(d.payUrl, "_blank");
-            setTopupAmount("");
-        } catch {} finally { setTopupLoading(false); }
+
+            if (d?.payUrl) {
+                triggerHaptic("notification", "success");
+                if (tg) {
+                    if (d.payUrl.includes("t.me/") || d.payUrl.includes("telegram.me/")) {
+                        tg.openTelegramLink(d.payUrl);
+                    } else if (tg.openLink) {
+                        tg.openLink(d.payUrl);
+                    } else {
+                        window.open(d.payUrl, "_blank");
+                    }
+                } else {
+                    window.open(d.payUrl, "_blank");
+                }
+                setTopupAmount("");
+            } else {
+                triggerHaptic("notification", "error");
+            }
+        } catch (error) {
+            console.error("Topup error details:", error);
+            triggerHaptic("notification", "error");
+        } finally {
+            // ЗДЕСЬ БЫЛА ОШИБКА: теперь блок finally прописан корректно
+            setTopupLoading(false);
+        }
     };
 
     const Pill = ({ label, color = "#5C6BFF" }: { label: string; color?: string }) => (
@@ -789,6 +817,9 @@ export default function Home() {
 
         if (selectedTab === "home") return (
             <div style={{ padding: "0 16px 120px", maxWidth: 480, margin: "0 auto", overflowY: "auto", height: "90vh" }}>
+
+                <br />
+
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", paddingTop: 8, paddingBottom: 24 }}>
                     <div style={{ position: "relative" }}>
                         <img src={user?.avatar_url} alt="avatar"
@@ -801,7 +832,7 @@ export default function Home() {
                     <p style={{ fontSize: 12, color: "#8A8A9A", margin: "2px 0 0" }}>@{user?.id ?? "loading"}</p>
                 </div>
 
-                <Card style={{ marginBottom: 12 }}>
+                <Card style={{ marginBottom: 12, background: 'none', border: 'none' }}>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0 }}>
                         {[
                             { label: t("btn_firstaid"), icon: "🚨", color: "#FF4D6A", sheet: "firstaid" as SheetType },
@@ -810,30 +841,30 @@ export default function Home() {
                             { label: t("btn_orders"), icon: "📦", color: "#00D2A8", sheet: "orders" as SheetType },
                         ].map(({ label, icon, color, sheet }, i, arr) => (
                             <button key={sheet} onClick={() => { setSupportView("list"); setActiveSheet(sheet); triggerHaptic("impact"); }}
-                                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "16px 8px", background: "transparent", border: "none", borderRight: i < arr.length - 1 ? "1px solid #1E1E2A" : "none", cursor: "pointer", transition: "background 0.15s" }}
+                                    style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "16px 8px", background: "transparent", border: "none",  cursor: "pointer", transition: "background 0.15s" }}
                                     onMouseEnter={e => (e.currentTarget.style.background = "#1E1E2A")}
                                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
-                                <div style={{ width: 36, height: 36, borderRadius: 10, background: color + "1A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                                <div style={{ width: 46, height: 46, borderRadius: 10, background: color + "1A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
                                     {icon}
                                 </div>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: "#8A8A9A", letterSpacing: "0.02em" }}>{label}</span>
+                                <span style={{ fontSize: 12, fontWeight: 700, color: "#8A8A9A", letterSpacing: "0.02em" }}>{label}</span>
                             </button>
                         ))}
                     </div>
                 </Card>
 
-                <Card style={{ marginBottom: 12 }}>
-                    <div style={{ padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
-                        <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>💡</span>
-                        <div>
-                            <p style={{ fontSize: 12, fontWeight: 700, color: "#5C6BFF", margin: "0 0 4px" }}>{t("alert_new_features")}</p>
-                            <p style={{ fontSize: 11, color: "#8A8A9A", margin: 0, lineHeight: 1.6 }}>
-                                • {t("alert_payment")}<br />
-                                • {t("alert_currency")}
-                            </p>
-                        </div>
-                    </div>
-                </Card>
+                {/*<Card style={{ marginBottom: 12 }}>*/}
+                {/*    <div style={{ padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>*/}
+                {/*        <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>💡</span>*/}
+                {/*        <div>*/}
+                {/*            <p style={{ fontSize: 12, fontWeight: 700, color: "#5C6BFF", margin: "0 0 4px" }}>{t("alert_new_features")}</p>*/}
+                {/*            <p style={{ fontSize: 11, color: "#8A8A9A", margin: 0, lineHeight: 1.6 }}>*/}
+                {/*                • {t("alert_payment")}<br />*/}
+                {/*                • {t("alert_currency")}*/}
+                {/*            </p>*/}
+                {/*        </div>*/}
+                {/*    </div>*/}
+                {/*</Card>*/}
 
                 <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", color: "#44444F", textTransform: "uppercase", margin: "20px 0 8px 4px" }}>{t("faq_title")}</p>
                 <Card>
@@ -874,18 +905,18 @@ export default function Home() {
                                 <p style={{ fontSize: 10, color: "#8A8A9A", margin: "0 0 2px" }}>{t("wallet_user_id")}</p>
                                 <p style={{ fontSize: 12, fontWeight: 700, fontFamily: "monospace", color: "#fff", margin: 0 }}>{user?.id ? `#${user.id}` : "#———"}</p>
                             </div>
-                            <div style={{ textAlign: "right" }}>
-                                <p style={{ fontSize: 10, color: "#8A8A9A", margin: "0 0 2px" }}>{t("wallet_currency")}</p>
-                                <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: 0 }}>USD</p>
-                            </div>
-                            <div style={{ textAlign: "right" }}>
-                                <p style={{ fontSize: 10, color: "#8A8A9A", margin: "0 0 2px" }}>Status</p>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: "#00D2A8" }}>{t("wallet_active")}</span>
-                            </div>
+                            {/*<div style={{ textAlign: "right" }}>*/}
+                            {/*    <p style={{ fontSize: 10, color: "#8A8A9A", margin: "0 0 2px" }}>{t("wallet_currency")}</p>*/}
+                            {/*    <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: 0 }}>USD</p>*/}
+                            {/*</div>*/}
+                            {/*<div style={{ textAlign: "right" }}>*/}
+                            {/*    <p style={{ fontSize: 10, color: "#8A8A9A", margin: "0 0 2px" }}>Status</p>*/}
+                            {/*    <span style={{ fontSize: 11, fontWeight: 700, color: "#00D2A8" }}>{t("wallet_active")}</span>*/}
+                            {/*</div>*/}
                         </div>
                     </div>
 
-                    <Card style={{ marginBottom: 12 }}>
+                    <Card style={{ marginBottom: 12, marginTop: '1em' }}>
                         <div style={{ padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
                             <span style={{ fontSize: 15 }}>⚡</span>
                             <div>
@@ -944,6 +975,19 @@ export default function Home() {
                             <div style={{ textAlign: "right" }}>
                                 <p style={{ fontSize: 12, fontWeight: 700, color: "#00D2A8", margin: 0 }}>{t("wallet_instant")}</p>
                                 <p style={{ fontSize: 10, color: "#8A8A9A", margin: 0 }}>{t("wallet_auto")}</p>
+                            </div>
+                        </div>
+                        <div style={{ borderTop: "1px solid #1E1E2A", padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(0,105,210,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>₿</div>
+                                <div>
+                                    <p style={{ fontSize: 12, fontWeight: 700, color: "#fff", margin: 0 }}>{t("wallet_direct")}</p>
+                                    <p style={{ fontSize: 10, color: "#8A8A9A", margin: 0 }}>{t("wallet_direct_sub")}</p>
+                                </div>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                                <p style={{ fontSize: 12, fontWeight: 700, color: "#00D2A8", margin: 0 }}>{t("wallet_instant_d")}</p>
+                                <p style={{ fontSize: 10, color: "#8A8A9A", margin: 0 }}>{t("wallet_auto_d")}</p>
                             </div>
                         </div>
                     </Card>
@@ -1092,6 +1136,28 @@ export default function Home() {
             id: "settings", label: t("tab_settings"),
             icon: (a: boolean) => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={a ? 2.2 : 1.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
         },
+        // {
+        //     id: "My shop", label: t("my_shop"),
+        //     icon: (a: boolean) => <svg
+        //         width="22"
+        //         height="22"
+        //         viewBox="0 0 24 24"
+        //         fill="none"
+        //         stroke="currentColor"
+        //         strokeWidth={a ? 2.2 : 1.5}
+        //         strokeLinecap="round"
+        //         strokeLinejoin="round"
+        //     >
+        //         {/* Store Roof / Awning */}
+        //         <path d="M2 22V12l1-2V4a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v6l1 2v10" />
+        //
+        //         {/* Store Front Columns */}
+        //         <path d="M4 12V22M20 12V22" />
+        //
+        //         {/* Admin Shield / Clipboard shape in the center window */}
+        //         <path d="M9 12h6v6a3 3 0 0 1-6 0v-6z" />
+        //     </svg>,
+        // },
     ];
 
     return (

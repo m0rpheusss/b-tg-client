@@ -14,6 +14,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         btn_support: "Support",
         btn_orders: "Orders",
         btn_back: "Back",
+        promo_claimed_success: "Promo-code claimed.",
 
         // Alerts / banners
         alert_new_features: "New features coming soon",
@@ -99,13 +100,17 @@ export const translations: Record<Lang, Record<string, string>> = {
         wallet_instant_desc: "We support instant payments via CryptoBot.",
         wallet_topup_title: "Top up wallet",
         wallet_topup_desc: "Enter amount to top up",
-        wallet_topup_placeholder: "e.g. 5",
+        wallet_topup_placeholder: "0.00",
         wallet_topup_btn: "Top up with CryptoBot",
         wallet_topup_loading: "Creating invoice...",
         wallet_cryptobot: "CryptoBot",
         wallet_cryptobot_sub: "USDT payments",
         wallet_instant: "Instant",
         wallet_auto: "Auto confirm",
+        wallet_direct: "Transfer through operator",
+        wallet_direct_sub: "All currencies (contact with support)",
+        wallet_instant_d: "Manual",
+        wallet_auto_d: "9:00 - 21:30",
 
         // Settings tab
         settings_orders: "Orders",
@@ -135,6 +140,17 @@ export const translations: Record<Lang, Record<string, string>> = {
         shop_success: "✅ Purchase successful! Stash location is being sent.",
         shop_back_catalog: "Back to Catalog",
         shop_product_not_found: "Product not found.",
+        shop_select_district: "Select a district",
+        shop_products_found: "products found",
+        shop_filters: "Filters",
+        shop_category: "Categories",
+        all_categories: "All categories",
+        shop_select_shop: "Shops",
+        all_shops: "All shops",
+        shop_reset_filters: "Reset filters",
+        shop_apply_filters: "Apply filters",
+
+        my_shop: "My shop",
     },
 
     cz: {
@@ -148,6 +164,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         btn_support: "Podpora",
         btn_orders: "Objednávky",
         btn_back: "Zpět",
+        promo_claimed_success: "Promo kód byl úspěšně uplatněn.",
 
         alert_new_features: "Nové funkce již brzy",
         alert_localisation: "Plná lokalizace (en, cz, ru, ua, kz)",
@@ -193,7 +210,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         firstaid_s2_p3_title: "✓ Ujistěte a buďte přítomni",
         firstaid_s2_p3: "Klidně jim připomeňte, že vzali látku, že jsou fyzicky v bezpečí a že účinky pominou. Nikdy nenechávejte akutně panického člověka zcela bez dozoru.",
         firstaid_s2_p4_title: "⚠️ Sledujte fyzické varovné signály",
-        firstaid_s2_p4: "Odlište `špatný trip` od zdravotního problému. Pokud mají nebezpečně zrychlený tep, extrémní horečku, bolest na hrudi, záchvaty nebo jsou nebezpeční sobě či ostatním, okamžitě přejděte na záchranářské postupy.",
+        firstaid_s2_p4: "Odlište `špatný trip` od zdravotního problému. Pokud mají nebezpečně zrychlený tep, extrémní horečku, bolest na hrudi, záchvaty nebo jsou nebezpeční sobě či ostatním, okamžitě přejdete na záchranářské postupy.",
         firstaid_s3_title: "Obecné zásady snižování škod",
         firstaid_s3_p1_title: "Rizika kombinování látek:",
         firstaid_s3_p1: "Kombinování více látek – zejména depresantů jako alkohol, benzodiazepiny a opioidy – exponenciálně zvyšuje riziko nepředvídatelných interakcí a smrtelné respirační deprese.",
@@ -205,6 +222,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         promo_desc: "Zadejte svůj promo kód níže pro uplatnění slevy na váš zůstatek.",
         promo_placeholder: "např. BOHEMIA20",
         promo_btn: "Použít kód",
+        promo_not_found: "Promo kód nenalezen",
 
         support_title: "💬 Podpora",
         support_unavailable: "Podpora není momentálně dostupná.",
@@ -232,6 +250,10 @@ export const translations: Record<Lang, Record<string, string>> = {
         wallet_cryptobot_sub: "Platby USDT",
         wallet_instant: "Okamžité",
         wallet_auto: "Automatické potvrzení",
+        wallet_direct: "Převod přes operátora",
+        wallet_direct_sub: "Všechny měny (kontaktujte podporu)",
+        wallet_instant_d: "Manuální",
+        wallet_auto_d: "9:00 - 21:30",
 
         settings_orders: "Objednávky",
         settings_disputes: "Spory",
@@ -259,6 +281,17 @@ export const translations: Record<Lang, Record<string, string>> = {
         shop_success: "✅ Nákup úspěšný! Umístění úkrytu je zasíláno.",
         shop_back_catalog: "Zpět do katalogu",
         shop_product_not_found: "Produkt nenalezen.",
+        shop_select_district: "Vyberte čtvrť",
+        shop_products_found: "nalezených produktů",
+        shop_filters: "Filtry",
+        shop_category: "Kategorie",
+        all_categories: "Všechny kategorie",
+        shop_select_shop: "Obchody",
+        all_shops: "Všechny obchody",
+        shop_reset_filters: "Resetovat filtry",
+        shop_apply_filters: "Použít filtry",
+
+        my_shop: "Můj obchod",
     },
 
     ru: {
@@ -272,6 +305,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         btn_support: "Поддержка",
         btn_orders: "Заказы",
         btn_back: "Назад",
+        promo_claimed_success: "Промокод успешно активирован.",
 
         alert_new_features: "Новые функции скоро появятся",
         alert_localisation: "Полная локализация (en, cz, ru, ua, kz)",
@@ -302,7 +336,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         firstaid_s1_steps: "Немедленные действия:",
         firstaid_s1_step1_title: "Немедленно вызовите скорую:",
         firstaid_s1_step1: "Чётко сообщите, что человек «без сознания и не дышит». Укажите точное местоположение.",
-        firstaid_s1_step2_title: "Введите налоксон (Нарcan):",
+        firstaid_s1_step2_title: "Введите налоксон (Narcan):",
         firstaid_s1_step2: "При подозрении на опиоиды введите назальный или инъекционный налоксон. Повторяйте каждые 2–3 минуты при отсутствии реакции. Примечание: налоксон не навредит, если человек не принимал опиоиды.",
         firstaid_s1_step3_title: "Выполните искусственное дыхание:",
         firstaid_s1_step3: "Если человек не дышит, убедитесь, что дыхательные пути свободны, запрокиньте голову, зажмите нос и делайте 1 вдох каждые 5 секунд.",
@@ -317,7 +351,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         firstaid_s2_p3_title: "✓ Заверьте и оставайтесь рядом",
         firstaid_s2_p3: "Спокойно напомните, что они приняли вещество, что физически в безопасности, и что эффект временный и пройдёт. Никогда не оставляйте человека в остром состоянии паники без присмотра.",
         firstaid_s2_p4_title: "⚠️ Следите за физическими тревожными признаками",
-        firstaid_s2_p4: "Отличите «плохой трип» от медицинской проблемы. При опасно высоком пульсе, сильной лихорадке, боли в груди, судорогах или физической опасности для себя и других — немедленно переходите к экстренным медицинским процедурам.",
+        firstaid_s2_p4: "Отличите «плохой трип» от медицинской проблемы. При опасно высоком пульсе, сильной лихорабке, боли в груди, судорогах или физической опасности для себя и других — немедленно переходите к экстренным медицинским процедурам.",
         firstaid_s3_title: "Общие принципы снижения вреда",
         firstaid_s3_p1_title: "Риски полисубстантности:",
         firstaid_s3_p1: "Сочетание нескольких веществ — особенно депрессантов, таких как алкоголь, бензодиазепины и опиоиды — экспоненциально увеличивает риск непредсказуемых взаимодействий и смертельного угнетения дыхания.",
@@ -329,6 +363,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         promo_desc: "Введите ваш промокод ниже, чтобы получить скидку на баланс аккаунта.",
         promo_placeholder: "напр. BOHEMIA20",
         promo_btn: "Применить код",
+        promo_not_found: "Промокод не найден",
 
         support_title: "💬 Поддержка",
         support_unavailable: "Поддержка сейчас недоступна.",
@@ -356,6 +391,10 @@ export const translations: Record<Lang, Record<string, string>> = {
         wallet_cryptobot_sub: "Платежи USDT",
         wallet_instant: "Мгновенно",
         wallet_auto: "Автоподтверждение",
+        wallet_direct: "Перевод через оператора",
+        wallet_direct_sub: "Все валюты (связаться с поддержкой)",
+        wallet_instant_d: "Вручную",
+        wallet_auto_d: "9:00 - 21:30",
 
         settings_orders: "Заказы",
         settings_disputes: "Споры",
@@ -383,6 +422,17 @@ export const translations: Record<Lang, Record<string, string>> = {
         shop_success: "✅ Покупка успешна! Местоположение схрона отправляется.",
         shop_back_catalog: "Назад в каталог",
         shop_product_not_found: "Товар не найден.",
+        shop_select_district: "Выберите район",
+        shop_products_found: "товаров найдено",
+        shop_filters: "Фильтры",
+        shop_category: "Категории",
+        all_categories: "Все категории",
+        shop_select_shop: "Магазины",
+        all_shops: "Все магазины",
+        shop_reset_filters: "Сбросить фильтры",
+        shop_apply_filters: "Применить фильтры",
+
+        my_shop: "Мой магазин",
     },
 
     ua: {
@@ -396,8 +446,9 @@ export const translations: Record<Lang, Record<string, string>> = {
         btn_support: "Підтримка",
         btn_orders: "Замовлення",
         btn_back: "Назад",
+        promo_claimed_success: "Промокод успішно активовано.",
 
-        alert_new_features: "Нові функції незабаром",
+        alert_new_features: "Нові функции незабаром",
         alert_localisation: "Повна локалізація (en, cz, ru, ua, kz)",
         alert_payment: "Більше способів оплати",
         alert_currency: "Кілька варіантів валют",
@@ -435,7 +486,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         firstaid_s2_title: "2. Психологічна криза (складні переживання)",
         firstaid_s2_desc: "Коли хтось переживає гостру паніку, параною або дезорієнтацію від психоделіків або психоактивних речовин, застосуйте протоколи взаємної підтримки:",
         firstaid_s2_p1_title: "✓ Безпечне середовище",
-        firstaid_s2_p1: "Відведіть людину від натовпу, гучної музики, яскравого або мигтячого світла і незнайомих людей. Забезпечте тихе, тепле і комфортне місце для відпочинку.",
+        firstaid_s2_p1: "Відведіть lюдину від натовпу, гучної музики, яскравого або мигтячого світла і незнайомих людей. Забезпечте тихе, тепле і комфортне місце для відпочинку.",
         firstaid_s2_p2_title: "✓ Заспокоюйте, не контролюйте",
         firstaid_s2_p2: "Не намагайтесь придушити або оскаржувати їхній досвід. Уникайте слів «заспокойся». Замість цього ставте заземлюючі запитання.",
         firstaid_s2_p3_title: "✓ Запевніть та залишайтесь поруч",
@@ -453,6 +504,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         promo_desc: "Введіть ваш промокод нижче для застосування знижки на баланс рахунку.",
         promo_placeholder: "напр. BOHEMIA20",
         promo_btn: "Застосувати код",
+        promo_not_found: "Промокод не знайдено",
 
         support_title: "💬 Підтримка",
         support_unavailable: "Підтримка зараз недоступна.",
@@ -480,6 +532,10 @@ export const translations: Record<Lang, Record<string, string>> = {
         wallet_cryptobot_sub: "Платежі USDT",
         wallet_instant: "Миттєво",
         wallet_auto: "Автопідтвердження",
+        wallet_direct: "Переказ через оператора",
+        wallet_direct_sub: "Усі валюти (зв'язатися з підтримкою)",
+        wallet_instant_d: "Вручну",
+        wallet_auto_d: "9:00 - 21:30",
 
         settings_orders: "Замовлення",
         settings_disputes: "Суперечки",
@@ -507,6 +563,17 @@ export const translations: Record<Lang, Record<string, string>> = {
         shop_success: "✅ Покупка успішна! Місцезнаходження схрону надсилається.",
         shop_back_catalog: "Назад до каталогу",
         shop_product_not_found: "Товар не знайдено.",
+        shop_select_district: "Оберіть район",
+        shop_products_found: "товарів знайдено",
+        shop_filters: "Фільтри",
+        shop_category: "Категорії",
+        all_categories: "Усі категорії",
+        shop_select_shop: "Магазини",
+        all_shops: "Усі магазини",
+        shop_reset_filters: "Скинути фільтри",
+        shop_apply_filters: "Застосувати фільтри",
+
+        my_shop: "Мій магазин",
     },
 
     kz: {
@@ -520,6 +587,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         btn_support: "Қолдау",
         btn_orders: "Тапсырыстар",
         btn_back: "Артқа",
+        promo_claimed_success: "Промокод сәтті белсендірілді.",
 
         alert_new_features: "Жаңа мүмкіндіктер жақында",
         alert_localisation: "Толық локализация (en, cz, ru, ua, kz)",
@@ -561,11 +629,11 @@ export const translations: Record<Lang, Record<string, string>> = {
         firstaid_s2_p1_title: "✓ Қауіпсіз орта",
         firstaid_s2_p1: "Адамды тобырдан, қатты музыкадан, жарқыл мен жыпылықтаудан және бейтаныс адамдардан алыстатыңыз. Жатуға болатын тыныш, жылы және жайлы орын қамтамасыз етіңіз.",
         firstaid_s2_p2_title: "✓ Тыныштандырыңыз, бақыламаңыз",
-        firstaid_s2_p2: "Олардың тәжірибесін басуға немесе талқылауға тырыспаңыз. «Тыныштал» деген сөздерден аулақ болыңыз. Орнына жерлестіруші сұрақтар қойыңыз.",
+        firstaid_s2_p2: "Олардың тәжірибесін басуға немесе талқылауға try тырыспаңыз. «Тыныштал» деген сөздерден аулақ болыңыз. Орнына жерлестіруші сұрақтар қойыңыз.",
         firstaid_s2_p3_title: "✓ Сендіріңіз және жанында болыңыз",
         firstaid_s2_p3: "Олар зат қабылдағанын, физикалық қауіпсіздігін және дәрінің уақытша екенін сабырлы түрде ескертіңіз. Өткір үрей жағдайындағы адамды мүлдем қараусыз қалдырмаңыз.",
         firstaid_s2_p4_title: "⚠️ Физикалық ескерту белгілерін қадағалаңыз",
-        firstaid_s2_p4: "«Жаман трипті» медициналық мәселеден ажыратыңыз. Қауіпті жоғары пульс, қатты қызу, кеуде ауыруы, ұстамалар болса немесе өзіне не басқаларға қауіп төнсе — дереу медициналық төтенше жағдай процедураларына көшіңіз.",
+        firstaid_s2_p4: "«Жаман трипті» медициналық мәселеден ажыратыңыз. Қауіпті жоғары пульс, қатты қызу, кеуде ауыруы, ұстамалар болса немесе өзіне не басқаларға қауіп төнсе —  дереу медициналық төтенше жағдай процедураларына көшіңіз.",
         firstaid_s3_title: "Зиянды азайтудың жалпы қағидалары",
         firstaid_s3_p1_title: "Полисубстанция тәуекелдері:",
         firstaid_s3_p1: "Бірнеше зат — әсіресе алкоголь, бензодиазепиндер және опиоидтар сияқты депрессанттарды — біріктіру болжаусыз өзара әрекеттесу мен өлімге әкелетін тыныс алуды тоқтату тәуекелін экспоненциалды түрде арттырады.",
@@ -577,6 +645,7 @@ export const translations: Record<Lang, Record<string, string>> = {
         promo_desc: "Аккаунт балансыңызға жеңілдік алу үшін төмендегі промокодты енгізіңіз.",
         promo_placeholder: "мыс. BOHEMIA20",
         promo_btn: "Кодты қолдану",
+        promo_not_found: "Промокод табылмады",
 
         support_title: "💬 Қолдау",
         support_unavailable: "Қолдау қазір қолжетімді емес.",
@@ -604,6 +673,10 @@ export const translations: Record<Lang, Record<string, string>> = {
         wallet_cryptobot_sub: "USDT төлемдері",
         wallet_instant: "Лездік",
         wallet_auto: "Автоматты растау",
+        wallet_direct: "Оператор арқылы аударым",
+        wallet_direct_sub: "Барлық валюталар (қолдау қызметіне хабарласыңыз)",
+        wallet_instant_d: "Қолмен",
+        wallet_auto_d: "9:00 - 21:30",
 
         settings_orders: "Тапсырыстар",
         settings_disputes: "Даулар",
@@ -631,6 +704,17 @@ export const translations: Record<Lang, Record<string, string>> = {
         shop_success: "✅ Сатып алу сәтті болды! Кэш орналасқан жері жіберілуде.",
         shop_back_catalog: "Каталогқа оралу",
         shop_product_not_found: "Өнім табылмады.",
+        shop_select_district: "Ауданды таңдаңыз",
+        shop_products_found: "өнім табылды",
+        shop_filters: "Сүзгілер",
+        shop_category: "Санаттар",
+        all_categories: "Барлық санаттар",
+        shop_select_shop: "Дүкендер",
+        all_shops: "Барлық дүкендер",
+        shop_reset_filters: "Сүзгілерді тастау",
+        shop_apply_filters: "Сүзгілерді қолдану",
+
+        my_shop: "Менің дүкенім",
     },
 };
 
