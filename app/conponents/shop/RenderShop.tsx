@@ -841,14 +841,22 @@ const RenderShop = ({ lang = "en" }: { lang?: Lang }) => {
     }
 
     // Products Catalog Main View Mesh
+    // Products Catalog Main View Mesh
     if (currentView === "products") {
         return (
-            <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", paddingBottom: 60 }}>
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    height: "100vh", // Fixed height viewport wrapper
+                    overflow: "hidden" // Keeps sticky bars stable without double scrollbars
+                }}
+            >
                 <BackgroundGradient />
 
-                <div style={{ position: "sticky", top: 0, zIndex: 10, background: "rgba(10, 10, 15, 0.8)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}>
+                {/* Header Control Panel (Sticky Container) */}
+                <div style={{ background: "rgba(10, 10, 15, 0.8)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", flexShrink: 0 }}>
                     <br />
-
                     {/* Quick Filters Pill Action Tray */}
                     <div style={{ padding: "12px 16px", display: "flex", gap: 8, overflowX: "auto", borderBottom: "1px solid #1E1E2A" }}>
                         <button
@@ -918,7 +926,7 @@ const RenderShop = ({ lang = "en" }: { lang?: Lang }) => {
                 </div>
 
                 {/* Sub Counter Metric Bar */}
-                <div style={{ padding: "14px 16px 8px", display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 480, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+                <div style={{ padding: "14px 16px 8px", display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: 480, margin: "0 auto", width: "100%", boxSizing: "border-box", flexShrink: 0 }}>
                     <p style={{ fontSize: 13, color: "#8A8A9A", margin: 0 }}>
                         {filteredProducts.length} {t("shop_products_found") || "products found"}
                     </p>
@@ -945,65 +953,73 @@ const RenderShop = ({ lang = "en" }: { lang?: Lang }) => {
                     )}
                 </div>
 
-                {/* Grid Framework Architecture */}
-                {loading ? (
-                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, minHeight: 200 }}>
-                        <Spinner size="lg" />
-                    </div>
-                ) : filteredProducts.length === 0 ? (
-                    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", flex: 1, padding: "40px 20px", gap: 16 }}>
-                        <span style={{ fontSize: 48 }}>🛒</span>
-                        <p style={{ color: "#8A8A9A", fontSize: 14, textAlign: "center" }}>{t("shop_no_products") || "No products match your filters."}</p>
-                    </div>
-                ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "8px 16px 40px", maxWidth: 480, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
-                        {filteredProducts.map((product) => {
-                            return (
-                                <Card key={`product-card-${product.id}`} onClick={() => handleProductSelect(product.id)} style={{ display: "flex", flexDirection: "column" }}>
-                                    <div style={{ position: "relative", width: "100%", paddingTop: "100%", overflow: "hidden", background: "#161622" }}>
-                                        <img
-                                            src={product.image || "https://placehold.co/300"}
-                                            alt={product.name}
-                                            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
-                                            loading="lazy"
-                                        />
-                                    </div>
-                                    <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-                                        {product.subcategory && (
-                                            <span style={{ fontSize: 10, fontWeight: 500, color: "#5C6BFF" }}>
-                                                    {product.subcategory.name}
+                {/* Scrollable Container Zone */}
+                <div
+                    style={{
+                        flex: 1,
+                        overflowY: "auto",
+                        WebkitOverflowScrolling: "touch", // Smooth physics scrolling response on iOS/Telegram WebViews
+                        width: "100%"
+                    }}
+                >
+                    {loading ? (
+                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 200, height: "100%" }}>
+                            <Spinner size="lg" />
+                        </div>
+                    ) : filteredProducts.length === 0 ? (
+                        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", padding: "40px 20px", gap: 16, height: "100%", boxSizing: "border-box" }}>
+                            <span style={{ fontSize: 48 }}>🛒</span>
+                            <p style={{ color: "#8A8A9A", fontSize: 14, textAlign: "center" }}>{t("shop_no_products") || "No products match your filters."}</p>
+                        </div>
+                    ) : (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: "8px 16px 80px", maxWidth: 480, margin: "0 auto", width: "100%", boxSizing: "border-box" }}>
+                            {filteredProducts.map((product) => {
+                                return (
+                                    <Card key={`product-card-${product.id}`} onClick={() => handleProductSelect(product.id)} style={{ display: "flex", flexDirection: "column" }}>
+                                        <div style={{ position: "relative", width: "100%", paddingTop: "100%", overflow: "hidden", background: "#161622" }}>
+                                            <img
+                                                src={product.image || "https://placehold.co/300"}
+                                                alt={product.name}
+                                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
+                                                loading="lazy"
+                                            />
+                                        </div>
+                                        <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+                                            {product.subcategory && (
+                                                <span style={{ fontSize: 10, fontWeight: 500, color: "#5C6BFF" }}>
+                                                        {product.subcategory.name}
+                                                    </span>
+                                            )}
+                                            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                                <span style={{ fontSize: 10, fontWeight: 700, color: "#8A8A9A", textTransform: "uppercase", letterSpacing: "0.02em" }}>
+                                                    {product.shop?.name ?? t("shop_unknown_shop")}
                                                 </span>
-                                        )}
-                                        <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                            <span style={{ fontSize: 10, fontWeight: 700, color: "#8A8A9A", textTransform: "uppercase", letterSpacing: "0.02em" }}>
-                                                {product.shop?.name ?? t("shop_unknown_shop")}
-                                            </span>
-                                        </div>
-                                        <h3 style={{ fontSize: 14, fontWeight: 600, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                            {product.name}
-                                        </h3>
+                                            </div>
+                                            <h3 style={{ fontSize: 14, fontWeight: 600, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                {product.name}
+                                            </h3>
 
+                                            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: -2 }}>
+                                                <span style={{ fontSize: 12, fontWeight: 600, color: "#EA8AFA" }}>
+                                                    {parseFloat(String(product.measureQuantity || 0))}
+                                                </span>
+                                                <span style={{ fontSize: 11, fontWeight: 500, color: "#EA8AFA" }}>
+                                                    {product.measureType}
+                                                </span>
+                                            </div>
 
-                                        <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: -2 }}>
-                                            <span style={{ fontSize: 12, fontWeight: 600, color: "#EA8AFA" }}>
-                                                {parseFloat(String(product.measureQuantity || 0))}
-                                            </span>
-                                            <span style={{ fontSize: 11, fontWeight: 500, color: "#EA8AFA" }}>
-                                                {product.measureType}
-                                            </span>
+                                            <div style={{ marginTop: "auto", paddingTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                <span style={{ fontSize: 15, fontWeight: 700, color: "#00D2A8" }}>
+                                                    ${product.price}
+                                                </span>
+                                            </div>
                                         </div>
-
-                                        <div style={{ marginTop: "auto", paddingTop: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                            <span style={{ fontSize: 15, fontWeight: 700, color: "#00D2A8" }}>
-                                                ${product.price}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </Card>
-                            );
-                        })}
-                    </div>
-                )}
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
 
                 <FiltersModal />
             </div>

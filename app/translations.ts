@@ -151,6 +151,10 @@ export const translations: Record<Lang, Record<string, string>> = {
         shop_apply_filters: "Apply filters",
 
         my_shop: "My shop",
+
+        shop_subcategory: "Product type",
+        all_subcategories: "All types",
+        shop_clear_all: "Reset filters",
     },
 
     cz: {
@@ -292,6 +296,10 @@ export const translations: Record<Lang, Record<string, string>> = {
         shop_apply_filters: "Použít filtry",
 
         my_shop: "Můj obchod",
+
+        shop_subcategory: "Typ produktu",
+        all_subcategories: "Všechny typy",
+        shop_clear_all: "Resetovat filtry",
     },
 
     ru: {
@@ -433,6 +441,10 @@ export const translations: Record<Lang, Record<string, string>> = {
         shop_apply_filters: "Применить фильтры",
 
         my_shop: "Мой магазин",
+
+        shop_subcategory: "Вид товара",
+        all_subcategories: "Все виды",
+        shop_clear_all: "Сбросить фильтры",
     },
 
     ua: {
@@ -574,6 +586,10 @@ export const translations: Record<Lang, Record<string, string>> = {
         shop_apply_filters: "Застосувати фільтри",
 
         my_shop: "Мій магазин",
+
+        shop_subcategory: "Тип товару",
+        all_subcategories: "Всі типи",
+        shop_clear_all: "Скинути фільтри",
     },
 
     kz: {
@@ -715,6 +731,10 @@ export const translations: Record<Lang, Record<string, string>> = {
         shop_apply_filters: "Сүзгілерді қолдану",
 
         my_shop: "Менің дүкенім",
+
+        shop_subcategory: "Өнім түрі",
+        all_subcategories: "Барлық түрлері",
+        shop_clear_all: "Сүзгілерді тастау",
     },
 };
 
