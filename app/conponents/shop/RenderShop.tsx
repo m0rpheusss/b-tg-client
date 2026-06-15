@@ -969,19 +969,20 @@ const RenderShop = ({ lang = "en" }: { lang?: Lang }) => {
                                         />
                                     </div>
                                     <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+                                        {product.subcategory && (
+                                            <span style={{ fontSize: 10, fontWeight: 500, color: "#5C6BFF" }}>
+                                                    {product.subcategory.name}
+                                                </span>
+                                        )}
                                         <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                                             <span style={{ fontSize: 10, fontWeight: 700, color: "#8A8A9A", textTransform: "uppercase", letterSpacing: "0.02em" }}>
                                                 {product.shop?.name ?? t("shop_unknown_shop")}
                                             </span>
-                                            {product.subcategory && (
-                                                <span style={{ fontSize: 10, fontWeight: 500, color: "#5C6BFF" }}>
-                                                    • {product.subcategory.name}
-                                                </span>
-                                            )}
                                         </div>
                                         <h3 style={{ fontSize: 14, fontWeight: 600, color: "#fff", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                             {product.name}
                                         </h3>
+
 
                                         <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: -2 }}>
                                             <span style={{ fontSize: 12, fontWeight: 600, color: "#EA8AFA" }}>
